@@ -4,6 +4,8 @@ import customtkinter as ctk
 
 from controllers.authController import AuthController
 from config.settings import FULLSCREEN, APP_TITLE
+from router.appRouter import AppRouter  # novo import
+
 
 def criar_env_se_nao_existir():
     env_file = Path('.') / '.env'
@@ -12,6 +14,7 @@ def criar_env_se_nao_existir():
             f.write("USERNAME=admin\n")
             f.write("PASSWORD=admin\n")
         print("Arquivo .env criado com credenciais padrão (USERNAME=admin / PASSWORD=admin).")
+
 
 class App:
     def __init__(self):
@@ -31,16 +34,22 @@ class App:
         except Exception:
             pass
 
-        # Controller + Router
-        self.controller = AuthController(root=self.root, router=self)
+        # router (responsável por show_login / show_main)
+        self.router = AppRouter(self.root)
 
-        # current view reference
+        # Controller -> agora exige router externo
+        self.controller = AuthController(root=self.root, router=self.router)
+
+        # conecta controller ao router
+        self.router.set_controller(self.controller)
+
+        # current view reference (opcional)
         self.current_view = None
 
         # Global keybindings: Escape => toggle fullscreen
         self.root.bind("<Escape>", lambda event: self.toggle_fullscreen())
 
-        # Start in login screen
+        # Start in login screen (delegado ao router)
         self.show_login()
 
     def toggle_fullscreen(self):
@@ -52,6 +61,7 @@ class App:
             pass
 
     def clear_root(self):
+        # mantenho essa função caso outras partes ainda a usem
         for child in list(self.root.winfo_children()):
             try:
                 child.destroy()
@@ -59,18 +69,18 @@ class App:
                 pass
 
     def show_login(self):
-        self.clear_root()
-        self.controller.destruir_view_login()
-        self.controller.criar_view_login()
-        self.current_view = self.controller.view
+        # delega para o router
+        view = self.router.show_login()
+        self.current_view = view
 
     def show_main(self):
-        self.clear_root()
-        self.controller.criar_main_view()
-        self.current_view = self.controller.main_view
+        # delega para o router
+        view = self.router.show_main()
+        self.current_view = view
 
     def run(self):
         self.root.mainloop()
+
 
 if __name__ == "__main__":
     app = App()

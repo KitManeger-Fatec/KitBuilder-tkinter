@@ -25,3 +25,8 @@ Edite o arquivo .env com suas credenciais
 ```bash
 python3 main.py
 ```
+
+5. Para rodar os testes 
+```bash
+python -m pytest tests/ -v
+```
