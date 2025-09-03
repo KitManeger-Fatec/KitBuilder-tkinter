@@ -19,3 +19,7 @@ FULLSCREEN = os.getenv("FULLSCREEN", "True").lower() in ("1", "true", "yes")
 
 # Exemplo: nome da marca para whitelabel
 BRAND_NAME = os.getenv("BRAND_NAME", "Minha Empresa")
+
+# Configuração de logging (apenas define a variável, não executa)
+SETUP_LOGGING = os.getenv("SETUP_LOGGING", "True").lower() in ("1", "true", "yes")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()

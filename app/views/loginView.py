@@ -1,17 +1,17 @@
-# views/loginView.py
 import customtkinter as ctk
 from PIL import Image
+import logging
 from app.config.themes.colors import COLORS
 from app.config.themes.fonts import FONTS
 
+logger = logging.getLogger(__name__)
 
 class LoginView(ctk.CTkFrame):
     """
     LoginView como frame que ocupa o root.
-    Layout: imagem à esquerda, formulário à direita.
-    Não cria outra janela — o App deve criar/gerenciar o root.
     """
     def __init__(self, parent, controller=None):
+        logger.debug("Inicializando LoginView")
         super().__init__(parent, fg_color=COLORS["bg"])
         self.controller = controller
         self.pack(fill="both", expand=True)
@@ -22,8 +22,10 @@ class LoginView(ctk.CTkFrame):
         self.grid_columnconfigure(1, weight=1, uniform="a")
 
         self._setup_ui()
+        logger.debug("LoginView inicializada com sucesso")
 
     def _setup_ui(self):
+        logger.debug("Configurando interface do LoginView")
         # Container central (um painel com canto arredondado)
         container = ctk.CTkFrame(self, fg_color=COLORS["panel"], corner_radius=14, width=1000, height=600)
         container.grid(row=0, column=0, columnspan=2, padx=40, pady=60, sticky="nsew")
@@ -44,11 +46,14 @@ class LoginView(ctk.CTkFrame):
             img.thumbnail(max_size, Image.LANCZOS)
             self.logo_image = ctk.CTkImage(light_image=img, dark_image=img, size=img.size)
             ctk.CTkLabel(left, image=self.logo_image, text="").grid(row=0, column=0, sticky="n", padx=12, pady=20)
-        except Exception:
+            logger.debug("Logo carregada com sucesso")
+        except Exception as e:
+            logger.error(f"Erro ao carregar logo: {e}")
             # placeholder quando não há imagem
             placeholder = ctk.CTkFrame(left, fg_color=COLORS["bg"], corner_radius=8, height=300, width=400)
             placeholder.grid(row=0, column=0, padx=12, pady=12)
             ctk.CTkLabel(left, text="LOGO", font=FONTS["title"], text_color=COLORS["fg"]).place(in_=placeholder, relx=0.5, rely=0.5, anchor="center")
+            logger.debug("Placeholder de logo criado")
 
         # Branding / frase de apoio abaixo da imagem
         ctk.CTkLabel(left, text="S.A.G.A", font=FONTS["title"], text_color=COLORS["fg"]).grid(row=1, column=0, pady=(6,2))
@@ -93,26 +98,34 @@ class LoginView(ctk.CTkFrame):
         try:
             self.usuario_entry.bind("<Return>", lambda e: self.controller.fazer_login() if self.controller else None)
             self.senha_entry.bind("<Return>", lambda e: self.controller.fazer_login() if self.controller else None)
-        except Exception:
-            pass
+            logger.debug("Atalhos de teclado configurados")
+        except Exception as e:
+            logger.warning(f"Erro ao configurar atalhos de teclado: {e}")
 
         # foco inicial
         try:
             self.usuario_entry.focus_set()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Erro ao definir foco inicial: {e}")
+
+        logger.debug("Interface do LoginView configurada com sucesso")
 
     def get_credenciais(self):
-        return self.usuario_entry.get(), self.senha_entry.get()
+        usuario = self.usuario_entry.get()
+        senha = self.senha_entry.get()
+        logger.debug(f"Credenciais obtidas - Usuário: {usuario}")
+        return usuario, senha
 
     def mostrar_erro(self, mensagem):
+        logger.warning(f"Exibindo mensagem de erro: {mensagem}")
         try:
             self.msg_label.configure(text=mensagem)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Erro ao exibir mensagem de erro: {e}")
 
     def destruir(self):
+        logger.debug("Destruindo LoginView")
         try:
             self.destroy()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Erro ao destruir LoginView: {e}")

@@ -8,7 +8,11 @@ from .views import *
 
 __all__ = [
     # Config
-    'SessionFactory', 'DatabaseConfigValidator', 'DatabaseConnectionError', 'DatabaseConfigurationError',
+    'SessionFactory',
+    'DatabaseConfigValidator',
+    'DatabaseConnectionError',
+    'DatabaseConfigurationError',
+    'setup_logging',
     # Controllers
     'AuthController',
     # Models

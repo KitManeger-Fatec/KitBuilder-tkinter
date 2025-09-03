@@ -1,17 +1,17 @@
-# views/mainView.py
 import customtkinter as ctk
+import logging
 from app.config.themes.colors import COLORS
 from app.config.themes.fonts import FONTS
 from app.config.settings import BRAND_NAME, APP_TITLE
 
+logger = logging.getLogger(__name__)
+
 class MainView(ctk.CTkFrame):
     """
-    MainView pensada para montagem de kits:
-    - Left: lista de kits (scrollable) com busca
-    - Right: detalhes do kit + preview/imagem + ações (Salvar, Sync -> site)
-    - Top: appbar com título e controlos whitelabel
+    MainView pensada para montagem de kits
     """
     def __init__(self, parent=None, router=None):
+        logger.debug("Inicializando MainView")
         self.router = router
 
         if parent is None:
@@ -21,8 +21,9 @@ class MainView(ctk.CTkFrame):
             self.root.title(APP_TITLE)
             try:
                 self.root.attributes("-fullscreen", True)
-            except Exception:
-                pass
+                logger.debug("Modo fullscreen ativado para MainView standalone")
+            except Exception as e:
+                logger.error(f"Erro ao definir fullscreen: {e}")
             self.pack(fill="both", expand=True)
         else:
             self._standalone = False
@@ -38,8 +39,10 @@ class MainView(ctk.CTkFrame):
         ]
 
         self._setup_ui()
+        logger.info("MainView inicializada com sucesso")
 
     def _setup_ui(self):
+        logger.debug("Configurando interface da MainView")
         # top appbar
         top = ctk.CTkFrame(self, height=64, fg_color=COLORS["panel"])
         top.pack(fill="x", side="top")
@@ -132,8 +135,11 @@ class MainView(ctk.CTkFrame):
 
         ctk.CTkButton(action_frame, text="Voltar ao Login", fg_color=COLORS["muted"], command=self.back_to_login, width=140).pack(side="right", padx=8)
 
+        logger.debug("Interface da MainView configurada com sucesso")
+
     # ---- placeholder actions ----
     def open_kit(self, kit):
+        logger.info(f"Abrindo kit: {kit['name']}")
         self.detail_title.configure(text=kit["name"])
         self.kit_name.delete(0, "end")
         self.kit_name.insert(0, kit["name"])
@@ -143,25 +149,27 @@ class MainView(ctk.CTkFrame):
         self.kit_price.insert(0, f"{kit['price']:.2f}")
 
     def create_kit(self):
-        # stub: criar novo kit (abrir formulário em branco)
+        logger.debug("Criando novo kit")
         self.detail_title.configure(text="Novo Kit")
         self.kit_name.delete(0, "end")
         self.kit_desc.delete(0, "end")
         self.kit_price.delete(0, "end")
 
     def save_kit(self):
-        # stub: salvar no banco local (implemente persistência)
         name = self.kit_name.get()
+        logger.info(f"Salvando kit: {name}")
         print("Salvar kit:", name)
 
     def publish_kit(self):
-        # stub: publicar/enfileirar sincronização com sistema web externo
+        name = self.kit_name.get()
+        logger.info(f"Publicando kit no site: {name}")
         print("Publicar no site:", self.kit_name.get())
 
     def sync_all(self):
-        # stub: sincronizar todos os kits com o site
+        logger.info("Sincronizando todos os kits com o site")
         print("Sincronizando todos os kits com o site...")
 
     def back_to_login(self):
+        logger.info("Voltando para tela de login")
         if self.router and hasattr(self.router, "show_login"):
             self.router.show_login()
