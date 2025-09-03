@@ -1,16 +1,21 @@
 # config/settings.py
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-# Carrega variáveis do .env
-load_dotenv()
+# Carrega variáveis do .env com caminho absoluto
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path)
 
-USUARIO_PADRAO = os.getenv("USER", "admin")
+USUARIO_PADRAO = os.getenv("USERNAME", "admin")
 SENHA_PADRAO = os.getenv("PASSWORD", "admin")
 
 # Variável global acessível
 VAR_GLOBAL = 10
 
-# Configurações gerais
-APP_TITLE = "Meu Sistema CustomTkinter"
-FULLSCREEN = True
+# Configs do app
+APP_TITLE = os.getenv("APP_TITLE", "S.A.G.A - Kit Manager")
+FULLSCREEN = os.getenv("FULLSCREEN", "True").lower() in ("1", "true", "yes")
+
+# Exemplo: nome da marca para whitelabel
+BRAND_NAME = os.getenv("BRAND_NAME", "Minha Empresa")

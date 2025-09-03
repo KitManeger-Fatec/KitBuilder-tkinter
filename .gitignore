@@ -1,4 +1,20 @@
 ArquivosFornecedores/
 DadosExcel/
-.env
 __pycache__/
+
+# Virtual environments
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
