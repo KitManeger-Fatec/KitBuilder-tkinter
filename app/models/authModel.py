@@ -1,6 +1,6 @@
 # models/authModel.py
 import os
-from config.settings import USUARIO_PADRAO, SENHA_PADRAO
+from app.config.settings import USUARIO_PADRAO, SENHA_PADRAO
 
 class AuthModel:
     @staticmethod

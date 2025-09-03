@@ -1,6 +1,5 @@
 # tests/test_loginView.py
-import pytest
-from views.loginView import LoginView
+from app.views.loginView import LoginView
 
 def test_login_view_creation(root_window):
     view = LoginView(parent=root_window)

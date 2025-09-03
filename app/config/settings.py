@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Carrega variáveis do .env com caminho absoluto
-env_path = Path('.') / '.env'
+env_path = Path('') / '.env'
 load_dotenv(dotenv_path=env_path)
 
 USUARIO_PADRAO = os.getenv("USERNAME", "admin")

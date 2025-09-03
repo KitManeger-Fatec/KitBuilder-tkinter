@@ -1,5 +1,5 @@
 # tests/test_authModel.py
-from models.authModel import AuthModel
+from app.models import AuthModel
 
 def test_verificar_credenciais_corretas():
     model = AuthModel()

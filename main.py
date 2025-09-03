@@ -2,9 +2,9 @@
 from pathlib import Path
 import customtkinter as ctk
 
-from controllers.authController import AuthController
-from config.settings import FULLSCREEN, APP_TITLE
-from router.appRouter import AppRouter  # novo import
+from app.controllers.authController import AuthController
+from app.config import FULLSCREEN, APP_TITLE
+from app.routers.appRouter import AppRouter  # novo import
 
 
 def criar_env_se_nao_existir():
@@ -34,13 +34,13 @@ class App:
         except Exception:
             pass
 
-        # router (responsável por show_login / show_main)
+        # routers (responsável por show_login / show_main)
         self.router = AppRouter(self.root)
 
-        # Controller -> agora exige router externo
+        # Controller -> agora exige routers externo
         self.controller = AuthController(root=self.root, router=self.router)
 
-        # conecta controller ao router
+        # conecta controller ao routers
         self.router.set_controller(self.controller)
 
         # current view reference (opcional)
@@ -49,7 +49,7 @@ class App:
         # Global keybindings: Escape => toggle fullscreen
         self.root.bind("<Escape>", lambda event: self.toggle_fullscreen())
 
-        # Start in login screen (delegado ao router)
+        # Start in login screen (delegado ao routers)
         self.show_login()
 
     def toggle_fullscreen(self):
@@ -69,12 +69,12 @@ class App:
                 pass
 
     def show_login(self):
-        # delega para o router
+        # delega para o routers
         view = self.router.show_login()
         self.current_view = view
 
     def show_main(self):
-        # delega para o router
+        # delega para o routers
         view = self.router.show_main()
         self.current_view = view
 

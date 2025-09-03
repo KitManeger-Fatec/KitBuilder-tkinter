@@ -1,7 +1,6 @@
 # tests/test_authController.py
-import pytest
 from unittest.mock import Mock
-from controllers.authController import AuthController
+from app.controllers.authController import AuthController
 
 
 def test_fazer_login_sucesso(root_window, mocker):

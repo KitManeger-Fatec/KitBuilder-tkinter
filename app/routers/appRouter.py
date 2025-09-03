@@ -1,7 +1,7 @@
-# router/appRouter.py
+# routers/appRouter.py
 class AppRouter:
     """
-    router simples que centraliza a navegação entre views na aplicação.
+    routers simples que centraliza a navegação entre views na aplicação.
     - É criado com uma referência ao root (janela).
     - Depois deve receber o controller via set_controller(controller).
     - Métodos publicos: show_login(), show_main().
@@ -13,7 +13,7 @@ class AppRouter:
         self.current_view = None
 
     def set_controller(self, controller):
-        """Vincula o controller que o router vai usar para criar as views."""
+        """Vincula o controller que o routers vai usar para criar as views."""
         self.controller = controller
 
     def clear_root(self):

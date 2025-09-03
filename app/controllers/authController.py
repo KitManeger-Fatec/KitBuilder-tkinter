@@ -1,17 +1,17 @@
 # controllers/authController.py
-from models.authModel import AuthModel
-from views.loginView import LoginView
-from views.mainView import MainView
+from app.models.authModel import AuthModel
+from app.views.loginView import LoginView
+from app.views.mainView import MainView
 
 class AuthController:
     """
     Controller responsável por autenticação e criação de views dentro do root.
-    Agora exige um router externo (injeção). Isso mantém a responsabilidade de
+    Agora exige um routers externo (injeção). Isso mantém a responsabilidade de
     navegação fora do controller e facilita integração com um AppRouter.
     """
     def __init__(self, root=None, router=None):
         if router is None:
-            raise ValueError("AuthController requires a router instance. Pass router=<your_router>.")
+            raise ValueError("AuthController requires a routers instance. Pass routers=<your_router>.")
         self.root = root
         self.router = router
         self.model = AuthModel()
@@ -28,7 +28,7 @@ class AuthController:
             return False
         usuario, senha = self.view.get_credenciais()
         if self.model.verificar_credenciais(usuario, senha):
-            # navega para main view via router injetado
+            # navega para main view via routers injetado
             if self.router and hasattr(self.router, "show_main"):
                 try:
                     self.router.show_main()

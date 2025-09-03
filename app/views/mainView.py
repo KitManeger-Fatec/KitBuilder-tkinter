@@ -1,9 +1,8 @@
 # views/mainView.py
 import customtkinter as ctk
-from PIL import Image, ImageTk
-from config.colors import COLORS
-from config.fonts import FONTS
-from config.settings import BRAND_NAME, APP_TITLE
+from app.config.themes.colors import COLORS
+from app.config.themes.fonts import FONTS
+from app.config.settings import BRAND_NAME, APP_TITLE
 
 class MainView(ctk.CTkFrame):
     """

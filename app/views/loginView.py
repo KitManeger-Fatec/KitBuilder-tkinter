@@ -1,8 +1,8 @@
 # views/loginView.py
 import customtkinter as ctk
-from PIL import Image, ImageTk
-from config.colors import COLORS
-from config.fonts import FONTS
+from PIL import Image
+from app.config.themes.colors import COLORS
+from app.config.themes.fonts import FONTS
 
 
 class LoginView(ctk.CTkFrame):
@@ -39,7 +39,7 @@ class LoginView(ctk.CTkFrame):
 
         # Tenta carregar logo.jpg e ajustar para exibição
         try:
-            img = Image.open("images/logo.jpg")
+            img = Image.open("assets/images/Logo.jpg")
             max_size = (560, 560)
             img.thumbnail(max_size, Image.LANCZOS)
             self.logo_image = ctk.CTkImage(light_image=img, dark_image=img, size=img.size)

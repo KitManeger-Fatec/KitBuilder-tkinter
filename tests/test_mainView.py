@@ -1,7 +1,5 @@
 # tests/test_mainView
-import pytest
-from unittest.mock import Mock
-from views.mainView import MainView
+from app.views import MainView
 
 def test_main_view_creation(root_window):
     view = MainView(parent=root_window)
