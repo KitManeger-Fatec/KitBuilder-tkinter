@@ -26,8 +26,8 @@ class LoginView(ctk.CTkFrame):
 
     def _setup_ui(self):
         logger.debug("Configurando interface do LoginView")
-        # Container central (um painel com canto arredondado)
-        container = ctk.CTkFrame(self, fg_color=COLORS["panel"], corner_radius=14, width=1000, height=600)
+        # Container central
+        container = ctk.CTkFrame(self, fg_color=COLORS["panel"], corner_radius=14)
         container.grid(row=0, column=0, columnspan=2, padx=40, pady=60, sticky="nsew")
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
@@ -39,7 +39,6 @@ class LoginView(ctk.CTkFrame):
         left.grid_rowconfigure(0, weight=1)
         left.grid_columnconfigure(0, weight=1)
 
-        # Tenta carregar logo.jpg e ajustar para exibição
         try:
             img = Image.open("assets/images/Logo.jpg")
             max_size = (560, 560)
@@ -49,41 +48,47 @@ class LoginView(ctk.CTkFrame):
             logger.debug("Logo carregada com sucesso")
         except Exception as e:
             logger.error(f"Erro ao carregar logo: {e}")
-            # placeholder quando não há imagem
             placeholder = ctk.CTkFrame(left, fg_color=COLORS["bg"], corner_radius=8, height=300, width=400)
             placeholder.grid(row=0, column=0, padx=12, pady=12)
-            ctk.CTkLabel(left, text="LOGO", font=FONTS["title"], text_color=COLORS["fg"]).place(in_=placeholder, relx=0.5, rely=0.5, anchor="center")
+            ctk.CTkLabel(placeholder, text="LOGO", font=FONTS["title"], text_color=COLORS["fg"]).place(relx=0.5, rely=0.5, anchor="center")
             logger.debug("Placeholder de logo criado")
 
-        # Branding / frase de apoio abaixo da imagem
         ctk.CTkLabel(left, text="S.A.G.A", font=FONTS["title"], text_color=COLORS["fg"]).grid(row=1, column=0, pady=(6,2))
         ctk.CTkLabel(left, text="Sistema Auxílio de Gerenciamento Avançado", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=2, column=0, pady=(0,16))
 
         # Right: formulário de login
         right = ctk.CTkFrame(container, fg_color=COLORS["bg"], corner_radius=10)
         right.grid(row=0, column=1, sticky="nsew", padx=(12,24), pady=24)
-        right.grid_rowconfigure(0, weight=0)
-        right.grid_rowconfigure(1, weight=1)
+        right.grid_rowconfigure(0, weight=1)
+        right.grid_columnconfigure(0, weight=1)
 
-        form_holder = ctk.CTkFrame(right, fg_color=COLORS["panel"], corner_radius=5, width=420, height=360)
-        form_holder.place(relx=0.5, rely=0.5, anchor="center")  # centraliza dentro do right
+        # Holder do formulário (centralizado com grid)
+        form_holder = ctk.CTkFrame(right, fg_color=COLORS["panel"], corner_radius=5)
+        form_holder.grid(row=0, column=0, sticky="nsew", padx=40, pady=40)
+        form_holder.grid_rowconfigure(0, weight=0)
+        form_holder.grid_rowconfigure(1, weight=0)
+        form_holder.grid_rowconfigure(2, weight=0)
+        form_holder.grid_rowconfigure(3, weight=0)
+        form_holder.grid_rowconfigure(4, weight=0)
+        form_holder.grid_rowconfigure(5, weight=1)  # espaço flexível
+        form_holder.grid_columnconfigure(0, weight=1)
 
         # Títulos do formulário
-        ctk.CTkLabel(form_holder, text="Acesse sua conta", font=FONTS["subtitle"], text_color=COLORS["fg"]).pack(pady=(22,6))
+        ctk.CTkLabel(form_holder, text="Acesse sua conta", font=FONTS["subtitle"], text_color=COLORS["fg"]).grid(row=0, column=0, pady=(22,6), sticky="n")
 
         # Campo Usuário
-        ctk.CTkLabel(form_holder, text="Usuário", font=FONTS["text"], text_color=COLORS["muted"]).pack(anchor="w", padx=24, pady=(8,0))
+        ctk.CTkLabel(form_holder, text="Usuário", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=1, column=0, sticky="w", padx=24, pady=(8,0))
         self.usuario_entry = ctk.CTkEntry(form_holder, width=340)
-        self.usuario_entry.pack(pady=(6,12), padx=20)
+        self.usuario_entry.grid(row=2, column=0, pady=(6,12), padx=20)
 
         # Campo Senha
-        ctk.CTkLabel(form_holder, text="Senha", font=FONTS["text"], text_color=COLORS["muted"]).pack(anchor="w", padx=24, pady=(8,0))
+        ctk.CTkLabel(form_holder, text="Senha", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=3, column=0, sticky="w", padx=24, pady=(8,0))
         self.senha_entry = ctk.CTkEntry(form_holder, show="*", width=340)
-        self.senha_entry.pack(pady=(6,12))
+        self.senha_entry.grid(row=4, column=0, pady=(6,12))
 
         # Mensagem de erro
         self.msg_label = ctk.CTkLabel(form_holder, text="", font=FONTS["text"], text_color=COLORS["error"])
-        self.msg_label.pack(pady=(4,6))
+        self.msg_label.grid(row=5, column=0, pady=(4,6))
 
         # Botão Login
         self.login_button = ctk.CTkButton(
@@ -92,9 +97,9 @@ class LoginView(ctk.CTkFrame):
             fg_color=COLORS["button"], text_color=COLORS["button_text"],
             font=FONTS["button"], width=340, height=44
         )
-        self.login_button.pack(pady=(10,18))
+        self.login_button.grid(row=6, column=0, pady=(10,18))
 
-        # Atalho local (opcional): Enter foca no botão quando em formulário
+        # Atalhos Enter
         try:
             self.usuario_entry.bind("<Return>", lambda e: self.controller.fazer_login() if self.controller else None)
             self.senha_entry.bind("<Return>", lambda e: self.controller.fazer_login() if self.controller else None)
@@ -102,7 +107,6 @@ class LoginView(ctk.CTkFrame):
         except Exception as e:
             logger.warning(f"Erro ao configurar atalhos de teclado: {e}")
 
-        # foco inicial
         try:
             self.usuario_entry.focus_set()
         except Exception as e:
