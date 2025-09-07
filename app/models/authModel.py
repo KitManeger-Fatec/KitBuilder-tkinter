@@ -18,6 +18,6 @@ class AuthModel:
         if resultado:
             logger.info(f"Credenciais válidas para usuário: {usuario}")
         else:
-            logger.warning(f"Credenciais inválidas para usuário: {usuario}")
-
+            logger.warning(f"Credenciais inválidas para usuário: {usuario},{expected_user},{expected_pass},{senha}")
+            print(f"username atual: {os.getenv("USERNAME")}")
         return resultado

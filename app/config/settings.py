@@ -9,7 +9,6 @@ load_dotenv(dotenv_path=env_path)
 
 USUARIO_PADRAO = os.getenv("USERNAME", "admin")
 SENHA_PADRAO = os.getenv("PASSWORD", "admin")
-
 # Variável global acessível
 VAR_GLOBAL = 10
 
