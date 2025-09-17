@@ -3,13 +3,21 @@ import re
 import pandas as pd
 from urllib.parse import quote_plus
 from sqlalchemy import create_engine, Column, Integer, String, Text, Float, MetaData, Table, Date, DateTime, DECIMAL
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
-# --- CONFIG DB ---
-USER = "root"
-PASSWORD = quote_plus("Supernatur@l1985")
-HOST = "localhost"
-DB = "db_listaCompras"
+# --- Carregar variáveis do .env ---
+load_dotenv()
+USER = os.getenv("DB_USER")
+PASSWORD = quote_plus(os.getenv("DB_PASSWORD"))  # Escapa caracteres especiais
+HOST = os.getenv("DB_HOST")
+DB = os.getenv("DB_NAME")
+
+# --- Importar seus models ORM ---
+from app.database import Base, SessionLocal
+from app.models.categoria import Categoria
+from app.models.subcategoria import Subcategoria
+from app.models.renomear import Renomear
 
 # --- ENGINE TEMP PARA DROP/CREATE DATABASE ---
 engine_temp = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}/")
@@ -33,33 +41,11 @@ engine = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}/{DB}")
 Session = sessionmaker(bind=engine)
 session = Session()
 
-# --- ORM BASE E TABELAS FIXAS ---
-Base = declarative_base()
+# --- Criar tabelas ORM caso não existam ---
+Base.metadata.create_all(bind=engine)
+print("📌 Tabelas ORM criadas com sucesso.")
 
-class Categoria(Base):
-    __tablename__ = "categorias"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    nome_classe = Column(String(255), nullable=False)
-    nome_categoria = Column(String(255), nullable=False)
-
-class Subcategoria(Base):
-    __tablename__ = "subcategoria"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    nome_subcategoria = Column(String(255), nullable=False)
-    db_subcategoria = Column(String(255), nullable=False)
-    descricao_subcategoria = Column(String(255), nullable=False)
-    categoria_id = Column(Integer, nullable=False)  # sem FK
-
-class Renomear(Base):
-    __tablename__ = "Renomear"
-    idRenomear = Column(Integer, primary_key=True, autoincrement=True)
-    renomear_coluna = Column(String(45), unique=True, nullable=False)
-    renomear_colunaRenomeada = Column(String(45), nullable=False)
-
-Base.metadata.create_all(engine)
-print("📡 Banco e tabelas fixas prontos!")
-
-# --- FUNÇÃO: mapear string de tipo do Excel para tipo SQLAlchemy ---
+# --- Função para mapear tipos do Excel para SQLAlchemy ---
 def map_excel_type_to_sqla(t: str):
     if not t or str(t).strip().lower() == 'nan':
         return String(255)
@@ -87,14 +73,13 @@ def map_excel_type_to_sqla(t: str):
         return Integer()
     return String(255)
 
-# --- ARQUIVO EXCEL ---
+# --- Arquivo Excel ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 nome_arquivo = input("Digite o nome do arquivo Excel (ex: dados.xlsx): ").strip()
-arquivo = os.path.join(BASE_DIR, nome_arquivo)
+arquivo = os.path.join(BASE_DIR, "app", "utils", nome_arquivo)
 
 if not os.path.exists(arquivo):
-    print(f"❌ Arquivo {arquivo} não encontrado na pasta {BASE_DIR}")
-    session.close()
+    print(f"❌ Arquivo {arquivo} não encontrado")
     raise SystemExit
 
 planilhas = pd.read_excel(arquivo, sheet_name=None, header=None)
@@ -105,9 +90,9 @@ for aba, df in planilhas.items():
     try:
         # ====== LEITURA DA PRIMEIRA LINHA ======
         nome_classe = str(df.iloc[0, 0])
-        nome_subcategoria = str(df.iloc[0, 1])
+        nome_categoria = str(df.iloc[0, 1])
         db_subcategoria = str(df.iloc[0, 2])
-        nome_categoria = str(df.iloc[0, 3])
+        nome_subcategoria = str(df.iloc[0, 3])
         descricao_subcategoria = str(df.iloc[0, 4])
 
         print(f"\n➡️ Aba: {aba}")
@@ -124,17 +109,18 @@ for aba, df in planilhas.items():
             session.add(cat)
             session.flush()
 
-        # --- INSERIR SUBCATEGORIA (se não existir) ---
+
+# --- INSERIR SUBCATEGORIA (se não existir) ---
         sub = session.query(Subcategoria).filter_by(db_subcategoria=db_subcategoria).first()
         if not sub:
             sub = Subcategoria(
                 nome_subcategoria=nome_subcategoria,
                 db_subcategoria=db_subcategoria,
                 descricao_subcategoria=descricao_subcategoria,
-                categoria_id=cat.id
-            )
-            session.add(sub)
-            session.flush()
+                categorias_id_categoria=cat.id_categoria   # <-- associação correta
+        )
+        session.add(sub)
+        session.flush()
 
         # --- CAMPOS DINÂMICOS A PARTIR DO EXCEL ---
         types_row = df.iloc[1, :].tolist() if len(df) > 1 else []
