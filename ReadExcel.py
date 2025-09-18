@@ -9,20 +9,20 @@ from dotenv import load_dotenv
 # --- Carregar variáveis do .env ---
 load_dotenv()
 USER = os.getenv("DB_USER")
-PASSWORD = quote_plus(os.getenv("DB_PASSWORD"))  # Escapa caracteres especiais
+PASSWORD = quote_plus(os.getenv("DB_PASSWORD"))
 HOST = os.getenv("DB_HOST")
 DB = os.getenv("DB_NAME")
 
-# --- Importar seus models ORM ---
+# --- Importar models ORM ---
 from app.database import Base, SessionLocal
 from app.models.categoria import Categoria
 from app.models.subcategoria import Subcategoria
 from app.models.renomear import Renomear
+from app.models.grupo import Grupo
 
 # --- ENGINE TEMP PARA DROP/CREATE DATABASE ---
 engine_temp = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}/")
 
-# --- DROP + CREATE DB ---
 resp = input(f"Deseja destruir e recriar o banco '{DB}'? (s/n): ").strip().lower()
 if resp == 's':
     conn = engine_temp.raw_connection()
@@ -89,38 +89,53 @@ print("\n📑 Abas encontradas:", ", ".join(planilhas.keys()))
 for aba, df in planilhas.items():
     try:
         # ====== LEITURA DA PRIMEIRA LINHA ======
-        nome_classe = str(df.iloc[0, 0])
-        nome_categoria = str(df.iloc[0, 1])
-        db_subcategoria = str(df.iloc[0, 2])
-        nome_subcategoria = str(df.iloc[0, 3])
-        descricao_subcategoria = str(df.iloc[0, 4])
+        nome_classe = str(df.iloc[0, 0]).strip()  # Grupo
+        nome_categoria = str(df.iloc[0, 1]).strip()
+        db_subcategoria = str(df.iloc[0, 2]).strip()
+        nome_subcategoria = str(df.iloc[0, 3]).strip()
+        descricao_subcategoria = str(df.iloc[0, 4]).strip()
 
         print(f"\n➡️ Aba: {aba}")
-        print("nome_classe:", nome_classe)
-        print("nome_subcategoria:", nome_subcategoria)
-        print("db_subcategoria:", db_subcategoria)
-        print("nome_categoria:", nome_categoria)
-        print("descricao_subcategoria:", descricao_subcategoria)
+        print("Grupo:", nome_classe)
+        print("Categoria:", nome_categoria)
+        print("Subcategoria DB:", db_subcategoria)
+        print("Subcategoria Nome:", nome_subcategoria)
+        print("Descrição Subcategoria:", descricao_subcategoria)
+
+        # --- INSERIR GRUPO (se não existir) ---
+        grupo = session.query(Grupo).filter_by(nome_classe=nome_classe).first()
+        if not grupo:
+            grupo = Grupo(nome_classe=nome_classe)
+            session.add(grupo)
+            session.flush()
+            print(f"✅ Grupo '{nome_classe}' inserido com id {grupo.idClasses}")
 
         # --- INSERIR CATEGORIA (se não existir) ---
-        cat = session.query(Categoria).filter_by(nome_classe=nome_classe, nome_categoria=nome_categoria).first()
+        cat = session.query(Categoria).filter_by(
+            nome_categoria=nome_categoria,
+            Classes_idClasses=grupo.idClasses
+        ).first()
         if not cat:
-            cat = Categoria(nome_classe=nome_classe, nome_categoria=nome_categoria)
+            cat = Categoria(
+                nome_categoria=nome_categoria,
+                Classes_idClasses=grupo.idClasses
+            )
             session.add(cat)
             session.flush()
+            print(f"✅ Categoria '{nome_categoria}' vinculada ao grupo '{nome_classe}'")
 
-
-# --- INSERIR SUBCATEGORIA (se não existir) ---
+        # --- INSERIR SUBCATEGORIA (se não existir) ---
         sub = session.query(Subcategoria).filter_by(db_subcategoria=db_subcategoria).first()
         if not sub:
             sub = Subcategoria(
                 nome_subcategoria=nome_subcategoria,
                 db_subcategoria=db_subcategoria,
                 descricao_subcategoria=descricao_subcategoria,
-                categorias_id_categoria=cat.id_categoria   # <-- associação correta
-        )
-        session.add(sub)
-        session.flush()
+                categorias_id_categoria=cat.id_categoria
+            )
+            session.add(sub)
+            session.flush()
+            print(f"✅ Subcategoria '{nome_subcategoria}' criada em '{nome_categoria}'")
 
         # --- CAMPOS DINÂMICOS A PARTIR DO EXCEL ---
         types_row = df.iloc[1, :].tolist() if len(df) > 1 else []
@@ -149,21 +164,12 @@ for aba, df in planilhas.items():
                 session.add(r)
         session.commit()
 
-        # --- EXIBIÇÃO DOS CAMPOS (sem criar tabela dinâmica) ---
-        print(f"\n🧩 Nova tabela simulada: {db_subcategoria}")
-        print("Campo".ljust(30), "Tipo (Excel)".ljust(20), "Tipo (SQLAlchemy/MySQL)")
-        print("-" * 80)
-        print("id".ljust(30), "-".ljust(20), "Integer (PK, autoincrement)")
-        for nome_campo, tipo_txt, sqla_type in campos:
-            tipo_excel = "-" if (tipo_txt is None or str(tipo_txt).lower() == "nan") else str(tipo_txt)
-            print(nome_campo.ljust(30), tipo_excel.ljust(20), str(sqla_type))
-
-        # --- CRIAÇÃO E INSERÇÃO DE DADOS NA TABELA DINÂMICA ---
+        # --- CRIAÇÃO E INSERÇÃO DE DADOS NA TABELA DINÂMICA COM CÓDIGO PRIMÁRIO ---
         metadata = MetaData()
         tabela = Table(
             db_subcategoria,
             metadata,
-            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("codigo_produto", String(19), primary_key=True),  # chave primária
             *(Column(nome_campo, sqla_type) for nome_campo, _, sqla_type in campos)
         )
         tabela.create(bind=engine, checkfirst=True)
@@ -179,10 +185,26 @@ for aba, df in planilhas.items():
                     if pd.isna(valor):
                         valor = None
                     row_dict[nome_campo] = valor
+
+                # --- GERAÇÃO DO CÓDIGO PRIMÁRIO DINÂMICO ---
+                gid = grupo.idClasses
+                cid = cat.id_categoria
+                sid = sub.idsubcategoria
+
+                prefixo = f"{gid:04d}.{cid:04d}.{sid:03d}."
+                ultimo = conn.execute(
+                    tabela.select()
+                          .where(tabela.c.codigo_produto.like(prefixo + "%"))
+                          .order_by(tabela.c.codigo_produto.desc())
+                ).first()
+                prox_seq = 1 if not ultimo else int(ultimo.codigo_produto.split(".")[-1]) + 1
+                codigo_produto = f"{gid:04d}.{cid:04d}.{sid:03d}.{prox_seq:04d}"
+
+                row_dict["codigo_produto"] = codigo_produto
                 conn.execute(tabela.insert().values(**row_dict))
 
         session.commit()
-        print(f"✅ Tabela '{db_subcategoria}' criada e dados inseridos com sucesso.\n")
+        print(f"✅ Tabela '{db_subcategoria}' criada e produtos inseridos com sucesso.\n")
 
     except Exception as e:
         session.rollback()
