@@ -2,6 +2,9 @@
 from pathlib import Path
 import customtkinter as ctk
 import logging
+import os
+from dotenv import load_dotenv
+
 
 from app.controllers.authController import AuthController
 from app.config import FULLSCREEN, APP_TITLE, SETUP_LOGGING, LOG_LEVEL
@@ -11,21 +14,11 @@ from app.config.logging_config import setup_logging
 logger = logging.getLogger(__name__)
 
 
-def criar_env_se_nao_existir():
-    env_file = Path('.') / '.env'
-    if not env_file.exists():
-        with open(env_file, 'w', encoding='utf-8') as f:
-            f.write("USERNAME=admin\n")
-            f.write("PASSWORD=admin\n")
-            f.write("SETUP_LOGGING=False\n")
-            f.write("LOG_LEVEL=INFO\n")
-        logger.info("Arquivo .env criado com credenciais padrão")
-
 
 class App:
     def __init__(self):
-        logger.info("Inicializando aplicação S.A.G.A")
-        criar_env_se_nao_existir()
+        logger.info(f"Inicializando aplicação {os.getenv("BRAND_NAME")}")
+
 
         # CustomTkinter settings
         ctk.set_appearance_mode("dark")
@@ -34,8 +27,8 @@ class App:
 
         # Root (single instance)
         self.root = ctk.CTk()
-        self.root.title(APP_TITLE)
-        logger.debug(f"Janela principal criada com título: {APP_TITLE}")
+        self.root.title(os.getenv("BRAND_NAME"))
+        logger.debug(f"Janela principal criada com título: {os.getenv("BRAND_NAME")}")
 
         # start fullscreen according to config
         try:

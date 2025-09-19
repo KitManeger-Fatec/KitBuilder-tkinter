@@ -3,6 +3,7 @@ from PIL import Image
 import logging
 from app.config.themes.colors import COLORS
 from app.config.themes.fonts import FONTS
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +54,8 @@ class LoginView(ctk.CTkFrame):
             ctk.CTkLabel(placeholder, text="LOGO", font=FONTS["title"], text_color=COLORS["fg"]).place(relx=0.5, rely=0.5, anchor="center")
             logger.debug("Placeholder de logo criado")
 
-        ctk.CTkLabel(left, text="S.A.G.A", font=FONTS["title"], text_color=COLORS["fg"]).grid(row=1, column=0, pady=(6,2))
-        ctk.CTkLabel(left, text="Sistema Auxílio de Gerenciamento Avançado", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=2, column=0, pady=(0,16))
+        ctk.CTkLabel(left, text=os.getenv("BRAND_NAME"), font=FONTS["title"], text_color=COLORS["fg"]).grid(row=1, column=0, pady=(6,2))
+        ctk.CTkLabel(left, text=os.getenv("BRAND_EXPLANATION"), font=FONTS["text"], text_color=COLORS["muted"]).grid(row=2, column=0, pady=(0,16))
 
         # Right: formulário de login
         right = ctk.CTkFrame(container, fg_color=COLORS["bg"], corner_radius=10)
