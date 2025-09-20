@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 
 
+
 from app.controllers.authController import AuthController
 from app.config import FULLSCREEN, APP_TITLE, SETUP_LOGGING, LOG_LEVEL
 from app.routers.appRouter import AppRouter
@@ -14,6 +15,7 @@ from app.config.logging_config import setup_logging
 logger = logging.getLogger(__name__)
 
 
+load_dotenv()
 
 class App:
     def __init__(self):
@@ -58,7 +60,7 @@ class App:
         logger.debug("Tecla Escape vinculada para alternar fullscreen")
 
         # Start in login screen (delegado ao routers)
-        self.show_login()
+        self.show_main() #self.show_login() -> mudança 
         logger.info("Aplicação inicializada com sucesso")
 
     def toggle_fullscreen(self):

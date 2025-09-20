@@ -66,3 +66,12 @@ class MainViewController:
         except Exception as e:
             logger.error(f"Erro ao buscar itens da subcategoria '{nome_subcategoria}': {e}")
             return []
+    @staticmethod
+    def get_renomear(db_sub):
+        # Exemplo estático, substitua pela sua lógica do banco
+        if db_sub == "chave_comutadora":
+            return [
+                {"renomear_coluna": "fabricante", "renomear_colunaRenomeada": "Fabricante"},
+                {"renomear_coluna": "modelo", "renomear_colunaRenomeada": "Modelo"},
+            ]
+        return []
