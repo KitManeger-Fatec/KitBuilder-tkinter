@@ -21,7 +21,7 @@ from app.models.renomear import Renomear
 from app.models.grupo import Grupo
 
 # --- ENGINE TEMP PARA DROP/CREATE DATABASE ---
-engine_temp = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}/")
+engine_temp = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}/{DB}?charset=utf8mb4", echo=True)
 
 resp = input(f"Deseja destruir e recriar o banco '{DB}'? (s/n): ").strip().lower()
 if resp == 's':
@@ -194,8 +194,8 @@ for aba, df in planilhas.items():
                 prefixo = f"{gid:04d}.{cid:04d}.{sid:03d}."
                 ultimo = conn.execute(
                     tabela.select()
-                          .where(tabela.c.codigo_produto.like(prefixo + "%"))
-                          .order_by(tabela.c.codigo_produto.desc())
+                        .where(tabela.c.codigo_produto.like(prefixo + "%"))
+                        .order_by(tabela.c.codigo_produto.desc())
                 ).first()
                 prox_seq = 1 if not ultimo else int(ultimo.codigo_produto.split(".")[-1]) + 1
                 codigo_produto = f"{gid:04d}.{cid:04d}.{sid:03d}.{prox_seq:04d}"

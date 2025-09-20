@@ -17,7 +17,9 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 --
 -- Banco para a Criação da estrutura do programa 
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `db_listaCompras` DEFAULT CHARACTER SET utf8 COLLATE utf8_bin ;
+CREATE SCHEMA IF NOT EXISTS `db_listaCompras` 
+DEFAULT CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci;
 USE `db_listaCompras` ;
 
 -- -----------------------------------------------------

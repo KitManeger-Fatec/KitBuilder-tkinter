@@ -66,12 +66,21 @@ class MainViewController:
         except Exception as e:
             logger.error(f"Erro ao buscar itens da subcategoria '{nome_subcategoria}': {e}")
             return []
+        
     @staticmethod
-    def get_renomear(db_sub):
-        # Exemplo estático, substitua pela sua lógica do banco
-        if db_sub == "chave_comutadora":
-            return [
-                {"renomear_coluna": "fabricante", "renomear_colunaRenomeada": "Fabricante"},
-                {"renomear_coluna": "modelo", "renomear_colunaRenomeada": "Modelo"},
-            ]
-        return []
+    def get_renomear(db_sub: str):
+        """
+        Retorna um dicionário: {nome_coluna_original: nome_amigavel}
+        filtrando pela subcategoria (db_sub) na tabela renomear.s
+        """
+        metadata = MetaData()
+        renomear = Table("renomear", metadata, autoload_with=engine)
+
+        stmt = select(renomear).where(renomear.c.renomear_coluna == db_sub)
+        with engine.connect() as conn:
+            rows = conn.execute(stmt).fetchall()
+
+        # supondo que as colunas da tabela sejam exatamente:
+        # db_subcategoria | coluna | renomeada
+        logger.debug(f"Mapeamento de renomeação para '{db_sub}': {rows}")
+        return {r.renomear_coluna: r.renomear_colunaRenomeada for r in rows}

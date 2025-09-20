@@ -12,8 +12,11 @@ HOST = os.getenv("DB_HOST")
 DB = os.getenv("DB_NAME")
 
 # --- ENGINE PARA O BANCO ---
-DATABASE_URL = f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}/{DB}"
-engine = create_engine(DATABASE_URL, echo=True)  # echo=True mostra queries no console
+
+DATABASE_URL = f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}/{DB}?charset=utf8mb4"
+engine = create_engine(
+    DATABASE_URL,
+    echo=True)
 
 # --- BASE ORM ---
 Base = declarative_base()
