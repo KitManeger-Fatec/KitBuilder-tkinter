@@ -17,7 +17,6 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-
 class MainView(ctk.CTkFrame):
     def __init__(self, parent=None, router=None):
         self.router = router
@@ -52,12 +51,12 @@ class MainView(ctk.CTkFrame):
         self.combo_classe.place(x=200, y=10)
 
         self.combo_categoria = ctk.CTkComboBox(top, values=["Escolha uma categoria"],
-                                               command=self.on_categoria_selected, width=250)
+                                            command=self.on_categoria_selected, width=250)
         self.combo_categoria.set("Escolha uma categoria")
         self.combo_categoria.place(x=500, y=10)
 
         self.combo_subcategoria = ctk.CTkComboBox(top, values=["Escolha uma subcategoria"],
-                                                  command=self.on_subcategoria_selected, width=250)
+                                                command=self.on_subcategoria_selected, width=250)
         self.combo_subcategoria.set("Escolha uma subcategoria")
         self.combo_subcategoria.place(x=800, y=10)
 
@@ -184,6 +183,7 @@ class MainView(ctk.CTkFrame):
 
         logger.info(f"Itens carregados: {len(self.itens_completos)}")
 
+
         # --- Atualiza Treeview ---
         self._atualizar_treeview(self.itens_completos)
 
@@ -303,16 +303,49 @@ class MainView(ctk.CTkFrame):
 
         self._atualizar_treeview(dados_filtrados)
 
+    def on_fabricante_selected(self, col_selecionada):
+        """
+        Atualiza os labels de fabricante e código de fabricante no painel de detalhes.
+        """
+
+        # Se os labels ainda não existem, cria com texto padrão
+        if not hasattr(self, 'lbl_nome_fab'):
+            self.lbl_nome_fab = ctk.CTkLabel(self.frame_detalhes, text="Nome do Fabricante:", anchor="w")
+            self.lbl_cod_fab = ctk.CTkLabel(self.frame_detalhes, text="Código do Fabricante:", anchor="w")
+
+        if col_selecionada in ("Escolha um Fabricante", "Todos"):
+            self.lbl_nome_fab.configure(text="Nome do Fabricante:")
+            self.lbl_cod_fab.configure(text="Código do Fabricante:")
+            return
+
+        # Itera sobre todos os itens para encontrar o código do fabricante
+        codigo = ""
+        for item in self.itens_completos:
+            if col_selecionada in item:
+                codigo = item.get(col_selecionada, "")
+                break
+        self.lbl_nome_fab.configure(text=f"Nome do Fabricante: {col_selecionada}")
+        self.lbl_cod_fab.configure(text=f"Código do Fabricante: {codigo}")
+
     def on_item_selected(self, event=None):
+        logger.info(f"Item selecionado na Treeview, nome do fabricante: {self.combo_fabricantes.get()}")
         selected = self.tree_itens.selection()
         dados_item = None
-        fabricante_selecionado = "" # Valor padrão vazio
+        fabricante_selecionado = "" 
         if selected:
             idx = self.tree_itens.index(selected[0])
             if idx < len(self.itens_completos):
                 dados_item = self.itens_completos[idx]
-                # Verifica se o item possui um fabricante e o armazena
-                fabricante_selecionado = dados_item.get("fabricante", "")
+        subcategoria_nome = self.combo_subcategoria.get()
+
+        mascara_descricao = MainViewController.get_descricao_subcategoria(subcategoria_nome)
+        descricao_montada = ""
+        if mascara_descricao:
+            try:
+                descricao_montada = mascara_descricao.format(**dados_item)
+            except KeyError as e:
+                logger.error(f"Erro ao formatar descrição: campo '{e}' não encontrado nos dados do item.")
+                descricao_montada = f"Erro ao formatar descrição. Verifique os dados."
 
         # Limpa o frame de detalhes
         for w in self.frame_detalhes.winfo_children():
@@ -320,57 +353,59 @@ class MainView(ctk.CTkFrame):
         self.frame_detalhes.configure(height=200)
         self.frame_detalhes.pack_propagate(False)
 
-        # ----- Painel esquerdo: imagem + campos principais -----
-        left_frame = ctk.CTkFrame(self.frame_detalhes, fg_color="transparent", width=300)
-        left_frame.grid(row=0, column=0, sticky="nw", padx=10, pady=10)
+        # Configuração do grid principal para 3 colunas
+        self.frame_detalhes.grid_columnconfigure(0, weight=0, minsize=400) # Coluna da esquerda fixa
+        self.frame_detalhes.grid_columnconfigure(1, weight=1) # Coluna da direita se expande
+        self.frame_detalhes.grid_rowconfigure(0, weight=1) # Permite que a linha principal se expanda
+
+        # ----- Painel Esquerdo (Fixo) -----
+        left_frame = ctk.CTkFrame(self.frame_detalhes, fg_color="transparent")
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        left_frame.grid_columnconfigure(0, weight=0, minsize=150) # Coluna da imagem
+        left_frame.grid_columnconfigure(1, weight=0, minsize=300) # Coluna dos textos se expande
+        left_frame.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=0)
+        left_frame.grid_rowconfigure(5, weight=1) # Apenas a linha da descrição se expande verticalmente
 
         # Imagem
-        img_file = "Logo.jpg"
-        if dados_item and dados_item.get("imagem"):
-            img_file = dados_item["imagem"].strip()
+        img_file = dados_item.get("imagem", "Logo.jpg").strip() if dados_item else "Logo.jpg"
         img_path = os.path.join(os.getcwd(), "assets", "images", img_file)
         if os.path.exists(img_path):
             try:
-                pil_img = Image.open(img_path).resize((120, 160))
-                ctk_img = ctk.CTkImage(pil_img, size=(120, 160))
+                pil_img = Image.open(img_path).resize((150, 200))
+                ctk_img = ctk.CTkImage(pil_img, size=(150, 200))
                 lbl_img = ctk.CTkLabel(left_frame, image=ctk_img, text="")
                 lbl_img.image = ctk_img
-                lbl_img.grid(row=0, column=0, rowspan=4, sticky="nw", pady=5, padx=(0,10))
+                lbl_img.grid(row=0, column=0, rowspan=6, sticky="nw", pady=0, padx=(0, 10))
             except Exception as e:
                 logger.warning(f"Não foi possível carregar a imagem: {e}")
 
         # Código do produto
         codigo_produto = dados_item.get("codigo_produto", "") if dados_item else ""
         lbl_codigo_titulo = ctk.CTkLabel(left_frame, text="Código do Produto:", anchor="w")
-        lbl_codigo_titulo.grid(row=0, column=1, sticky="w", padx=10, pady=(5, 0))
+        lbl_codigo_titulo.grid(row=0, column=1, sticky="w", padx=10, pady=(2, 0))
         lbl_codigo_val = ctk.CTkLabel(left_frame, text=str(codigo_produto),
                                     font=ctk.CTkFont(size=18, weight="bold"))
-        lbl_codigo_val.grid(row=1, column=1, sticky="w", padx=10, pady=(0, 5))
+        lbl_codigo_val.grid(row=1, column=1, sticky="w", padx=10, pady=(0, 2))
 
-        # Nome e Código do Fabricante (CRIADOS UMA ÚNICA VEZ AQUI)
-        # Estes labels serão atualizados pela chamada `on_fabricante_selected`
+        # Nome e Código do Fabricante
         self.lbl_nome_fab = ctk.CTkLabel(left_frame, text="Nome do Fabricante:", anchor="w")
-        self.lbl_nome_fab.grid(row=2, column=1, sticky="w", padx=10, pady=(0, 2))
+        self.lbl_nome_fab.grid(row=2, column=1, sticky="w", padx=10, pady=(0, 0))
         self.lbl_cod_fab = ctk.CTkLabel(left_frame, text="Código do Fabricante:", anchor="w")
-        self.lbl_cod_fab.grid(row=3, column=1, sticky="w", padx=10, pady=(0, 5))
+        self.lbl_cod_fab.grid(row=3, column=1, sticky="w", padx=10, pady=(0, 2))
+        self.on_fabricante_selected(self.combo_fabricantes.get())
         
-        # Adicionamos esta chamada para garantir que os dados sejam preenchidos
-        self.on_fabricante_selected(fabricante_selecionado)
-
-        # Descrição multilinha (Ajustado para ficar ABAIXO da imagem)
+        # Descrição multilinha
         descricao = dados_item.get("descricao", "") if dados_item else ""
         lbl_desc_titulo = ctk.CTkLabel(left_frame, text="Descrição:", anchor="w")
-        lbl_desc_titulo.grid(row=4, column=0, sticky="w", pady=(5,0), padx=(0,10))
+        lbl_desc_titulo.grid(row=4, column=1, columnspan=1, sticky="w", pady=(0, 0), padx=(10, 10))
         txt_desc = ctk.CTkTextbox(left_frame, height=50)
-        txt_desc.insert("0.0", descricao)
+        txt_desc.insert("0.0", descricao_montada or descricao)
         txt_desc.configure(state="disabled")
-        txt_desc.grid(row=5, column=0, columnspan=2, sticky="we", pady=(0,10))
-        left_frame.grid_columnconfigure(1, weight=1)
+        txt_desc.grid(row=5, column=1, columnspan=2, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
-        # ----- Painel direito: campos adicionais -----
+        # ----- Painel Direito (Expansível) -----
         right_frame_container = ctk.CTkScrollableFrame(self.frame_detalhes, fg_color="transparent")
-        right_frame_container.grid(row=0, column=1, sticky="nsew", padx=(100, 10), pady=10)
-        self.frame_detalhes.columnconfigure(1, weight=1)
+        right_frame_container.grid(row=0, column=1, sticky="nsew", padx=(10, 10), pady=10)
 
         if dados_item:
             row = 0
@@ -386,31 +421,3 @@ class MainView(ctk.CTkFrame):
         footer_frame = ctk.CTkFrame(self.frame_detalhes, fg_color="transparent", height=40)
         footer_frame.grid(row=1, column=0, columnspan=2, sticky="we", pady=10)
         footer_frame.pack_propagate(False)
-
-
-    def on_fabricante_selected(self, col_selecionada):
-        """
-        Atualiza os labels de fabricante e código de fabricante no painel de detalhes.
-        A busca pelo código do fabricante é feita na coluna que tem o mesmo nome do fabricante selecionado.
-        """
-        
-        codigo = None
-        if col_selecionada not in ("Escolha um Fabricante", "Todos"):
-            # Itera sobre todos os itens para encontrar o código do produto
-            for item in self.itens_completos:
-                # O código é o valor na coluna que tem o nome do fabricante
-                if col_selecionada in item:
-                    # Agora, procura pelo valor na coluna correspondente
-                    codigo = item.get(col_selecionada, "")
-                    # Se encontrar, podemos parar
-                    break
-        
-        # --- Atualiza os labels existentes ---
-        if hasattr(self, 'lbl_nome_fab'):
-            if col_selecionada in ("Escolha um Fabricante", "Todos"):
-                self.lbl_nome_fab.configure(text="Nome do Fabricante:")
-                self.lbl_cod_fab.configure(text="Código do Fabricante:")
-            else:
-                self.lbl_nome_fab.configure(text=f"Nome do Fabricante: {col_selecionada}")
-                self.lbl_cod_fab.configure(text=f"Código do Fabricante: {codigo if codigo else ''}")
-

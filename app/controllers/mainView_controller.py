@@ -84,3 +84,19 @@ class MainViewController:
         # db_subcategoria | coluna | renomeada
         logger.debug(f"Mapeamento de renomeação para '{db_sub}': {rows}")
         return {r.renomear_coluna: r.renomear_colunaRenomeada for r in rows}
+    
+    @staticmethod
+    def get_descricao_subcategoria(nome_subcategoria):
+        """Retorna a máscara de descrição para uma subcategoria."""
+        metadata = MetaData()
+        subcategorias = Table("subcategoria", metadata, autoload_with=engine)
+        
+        stmt = select(subcategorias.c.descricao_subcategoria).where(subcategorias.c.nome_subcategoria == nome_subcategoria)
+        
+        try:
+            with engine.connect() as conn:
+                result = conn.execute(stmt).scalar_one_or_none()
+            return result
+        except Exception as e:
+            logger.error(f"Erro ao buscar a descrição da subcategoria '{nome_subcategoria}': {e}")
+            return None
