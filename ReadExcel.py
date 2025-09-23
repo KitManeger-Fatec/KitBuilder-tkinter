@@ -94,12 +94,14 @@ for aba, df in planilhas.items():
         db_subcategoria = str(df.iloc[0, 2]).strip()
         nome_subcategoria = str(df.iloc[0, 3]).strip()
         descricao_subcategoria = str(df.iloc[0, 4]).strip()
+        unidade_medida = str(df.iloc[0, 5]).strip() 
 
         print(f"\n➡️ Aba: {aba}")
         print("Grupo:", nome_classe)
         print("Categoria:", nome_categoria)
         print("Subcategoria DB:", db_subcategoria)
         print("Subcategoria Nome:", nome_subcategoria)
+        print("Subcategoria unidade:", unidade_medida)
         print("Descrição Subcategoria:", descricao_subcategoria)
 
         # --- INSERIR GRUPO (se não existir) ---
@@ -131,6 +133,7 @@ for aba, df in planilhas.items():
                 nome_subcategoria=nome_subcategoria,
                 db_subcategoria=db_subcategoria,
                 descricao_subcategoria=descricao_subcategoria,
+                unidade_medida=unidade_medida,
                 categorias_id_categoria=cat.id_categoria
             )
             session.add(sub)

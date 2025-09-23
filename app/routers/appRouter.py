@@ -72,3 +72,15 @@ class AppRouter:
         except Exception as e:
             logger.error(f"Erro ao criar view principal: {e}")
             return None
+        
+    def show_pedido(self):
+        self.clear_root()
+        try:
+            from app.views.pedidoView import PedidoView
+            self.current_view = PedidoView(self.root, router=self)
+            self.current_view.atualizar_itens()
+            self.current_view.pack(fill="both", expand=True)
+        except Exception as e:
+            logger.error(f"Erro ao criar view de pedidos: {e}")
+
+            

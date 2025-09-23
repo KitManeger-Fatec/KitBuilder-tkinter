@@ -7,6 +7,8 @@ from app.controllers.mainView_controller import MainViewController
 from app.config.themes.colors import COLORS
 from app.config.themes.fonts import FONTS
 from app.config.settings import BRAND_NAME
+from app.controllers.pedidoView_controller import PedidoViewController
+from app.views.footer import criar_footer
 from app.database import engine
 from PIL import Image, ImageTk
 
@@ -59,6 +61,14 @@ class MainView(ctk.CTkFrame):
                                                 command=self.on_subcategoria_selected, width=250)
         self.combo_subcategoria.set("Escolha uma subcategoria")
         self.combo_subcategoria.place(x=800, y=10)
+
+        self.btn_ir_pedido = ctk.CTkButton(
+    top,
+    text="Ir para Pedido",
+    command=lambda: self.router.show_pedido() if self.router else None,
+    width=150
+)
+        self.btn_ir_pedido.place(x=1080, y=10)   # ajuste de x conforme seu layout
 
         # Frame principal
         main_frame = ctk.CTkFrame(self)
@@ -337,6 +347,11 @@ class MainView(ctk.CTkFrame):
             if idx < len(self.itens_completos):
                 dados_item = self.itens_completos[idx]
         subcategoria_nome = self.combo_subcategoria.get()
+        if dados_item:
+            PedidoViewController.add_item(
+            produto=dados_item.get("codigo_produto", "Sem código"),
+            quantidade=1  # ou o valor da sua caixa de quantidade
+        )
 
         mascara_descricao = MainViewController.get_descricao_subcategoria(subcategoria_nome)
         descricao_montada = ""
@@ -418,6 +433,7 @@ class MainView(ctk.CTkFrame):
                 row += 1
 
         # ----- Rodapé (para botões) -----
-        footer_frame = ctk.CTkFrame(self.frame_detalhes, fg_color="transparent", height=40)
-        footer_frame.grid(row=1, column=0, columnspan=2, sticky="we", pady=10)
-        footer_frame.pack_propagate(False)
+# depois de criar self.frame_detalhes ou no on_item_selected
+        self.footer_frame, self.quantidade, self.adicionar_pedido = criar_footer(
+            self.frame_detalhes, treeview=self.tree_itens, router=self.router
+        )
