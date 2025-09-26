@@ -1,11 +1,11 @@
 import customtkinter as ctk
 from PIL import Image
-import logging
+from app.utils.logger_config import get_logger
 from app.config.themes.colors import COLORS
 from app.config.themes.fonts import FONTS
 import os
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class LoginView(ctk.CTkFrame):
     """

@@ -2,6 +2,7 @@
 import logging
 from sqlalchemy import Table, MetaData, select
 from app.database import engine
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -85,18 +86,103 @@ class MainViewController:
         logger.debug(f"Mapeamento de renomeação para '{db_sub}': {rows}")
         return {r.renomear_coluna: r.renomear_colunaRenomeada for r in rows}
     
+
     @staticmethod
-    def get_descricao_subcategoria(nome_subcategoria):
+    def get_descricao_subcategoria(nome_subcategoria: str, dados_item: dict | None = None) -> str:
+        """
+        Busca a máscara de descrição para a subcategoria e
+        retorna a descrição já formatada.
+
+        Se dados_item estiver vazio ou faltar alguma chave,
+        os campos são preenchidos com string vazia.
+        """
+        logger.info(f"Buscando descrição para subcategoria '{nome_subcategoria}' com dados: {dados_item}")
+        metadata = MetaData()
+        subcategorias = Table("subcategoria", metadata, autoload_with=engine)
+        stmt = select(subcategorias.c.descricao_subcategoria).where(
+            subcategorias.c.nome_subcategoria == nome_subcategoria
+        )
+
+        mascara_descricao = ""
+        try:
+            with engine.connect() as conn:
+                mascara_descricao = conn.execute(stmt).scalar_one_or_none()
+        except Exception as e:
+            logger.error(f"Erro ao buscar a descrição da subcategoria '{nome_subcategoria}': {e}")
+            return "Erro ao buscar máscara de descrição."
+
+        logger.info(f"Máscara de descrição para '{nome_subcategoria}': {mascara_descricao}")
+
+        if not mascara_descricao:
+            return ""  # não tem máscara, retorna vazio
+
+        # garante dict com valores vazios se não existir chave
+        dados_seguro = defaultdict(str, dados_item or {})
+
+        try:
+            return mascara_descricao.format(**dados_seguro)
+        except Exception as e:
+            logger.error(f"Erro ao formatar descrição: {e}")
+            return "Erro ao formatar descrição. Verifique os dados."
+        
+    @staticmethod
+    def montar_descricao(item, mascara):
+        """
+        Monta a descrição do item baseado na máscara fornecida.
+        A máscara pode conter placeholders como {campo1}, {campo2}, etc.
+        """
+        if not mascara:
+            return "Descrição não disponível"
+        
+        descricao = mascara
+        for key, value in item.items():
+            placeholder = f"{{{key}}}"
+            if placeholder in descricao:
+                descricao = descricao.replace(placeholder, str(value) if value is not None else "")
+        
+        # Limpa espaços extras
+        descricao = ' '.join(descricao.split())
+        return descricao
+    
+    @staticmethod
+    def unidade_medida_to_abreviacao(unidade):
+        """Converte unidade de medida para abreviação"""
+        mapping = {
+            "Unidade": "un",
+            "Unidade(s)": "un", 
+            "peça": "pc",
+            "Peça": "pc",
+            "Peça(s)": "pc",
+            "Pacote(s)": "pct", 
+            "Pacote": "pct",
+            "Caixa": "cx",
+            "Caixa(s)": "cx",
+            "Metro": "m",
+            "Metros": "m",
+            "Milímetro": "mm",
+            "Milímetro(s)": "mm", 
+            "Litro": "lt",
+            "Litros": "lt",
+            "Grama": "g",  
+            "Gramas": "g",
+            "Quilo(s)": "kg",    
+            "Quilo": "kg",
+            # Adicione mais conforme necessário
+        }
+        return mapping.get(unidade,"")  # Retorna a abreviação ou a própria unidade se não encontrada
+    
+    @staticmethod
+    def get_unidade_medida(nome_subcategoria):
         """Retorna a máscara de descrição para uma subcategoria."""
         metadata = MetaData()
         subcategorias = Table("subcategoria", metadata, autoload_with=engine)
         
-        stmt = select(subcategorias.c.descricao_subcategoria).where(subcategorias.c.nome_subcategoria == nome_subcategoria)
+        stmt = select(subcategorias.c.unidade_medida).where(subcategorias.c.nome_subcategoria == nome_subcategoria)
         
         try:
             with engine.connect() as conn:
                 result = conn.execute(stmt).scalar_one_or_none()
             return result
         except Exception as e:
-            logger.error(f"Erro ao buscar a descrição da subcategoria '{nome_subcategoria}': {e}")
+            logger.error(f"Erro ao buscar a unidade da subcategoria '{nome_subcategoria}': {e}")
             return None

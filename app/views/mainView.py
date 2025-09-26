@@ -1,4 +1,4 @@
-import logging
+from app.utils.logger_config import get_logger
 import os
 import customtkinter as ctk
 from tkinter import ttk
@@ -12,12 +12,7 @@ from app.views.footer import criar_footer
 from app.database import engine
 from PIL import Image, ImageTk
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+logger = get_logger(__name__)
 
 class MainView(ctk.CTkFrame):
     def __init__(self, parent=None, router=None):
@@ -64,7 +59,7 @@ class MainView(ctk.CTkFrame):
 
         self.btn_ir_pedido = ctk.CTkButton(
     top,
-    text="Ir para Pedido",
+    text="Pedido",
     command=lambda: self.router.show_pedido() if self.router else None,
     width=150
 )
@@ -313,7 +308,7 @@ class MainView(ctk.CTkFrame):
 
         self._atualizar_treeview(dados_filtrados)
 
-    def on_fabricante_selected(self, col_selecionada):
+    def on_fabricante_selected(self, col_selecionada): 
         """
         Atualiza os labels de fabricante e código de fabricante no painel de detalhes.
         """
@@ -336,6 +331,7 @@ class MainView(ctk.CTkFrame):
                 break
         self.lbl_nome_fab.configure(text=f"Nome do Fabricante: {col_selecionada}")
         self.lbl_cod_fab.configure(text=f"Código do Fabricante: {codigo}")
+        return codigo
 
     def on_item_selected(self, event=None):
         logger.info(f"Item selecionado na Treeview, nome do fabricante: {self.combo_fabricantes.get()}")
@@ -346,21 +342,7 @@ class MainView(ctk.CTkFrame):
             idx = self.tree_itens.index(selected[0])
             if idx < len(self.itens_completos):
                 dados_item = self.itens_completos[idx]
-        subcategoria_nome = self.combo_subcategoria.get()
-        if dados_item:
-            PedidoViewController.add_item(
-            produto=dados_item.get("codigo_produto", "Sem código"),
-            quantidade=1  # ou o valor da sua caixa de quantidade
-        )
-
-        mascara_descricao = MainViewController.get_descricao_subcategoria(subcategoria_nome)
-        descricao_montada = ""
-        if mascara_descricao:
-            try:
-                descricao_montada = mascara_descricao.format(**dados_item)
-            except KeyError as e:
-                logger.error(f"Erro ao formatar descrição: campo '{e}' não encontrado nos dados do item.")
-                descricao_montada = f"Erro ao formatar descrição. Verifique os dados."
+                subcategoria_nome = self.combo_subcategoria.get()
 
         # Limpa o frame de detalhes
         for w in self.frame_detalhes.winfo_children():
@@ -407,14 +389,14 @@ class MainView(ctk.CTkFrame):
         self.lbl_nome_fab.grid(row=2, column=1, sticky="w", padx=10, pady=(0, 0))
         self.lbl_cod_fab = ctk.CTkLabel(left_frame, text="Código do Fabricante:", anchor="w")
         self.lbl_cod_fab.grid(row=3, column=1, sticky="w", padx=10, pady=(0, 2))
-        self.on_fabricante_selected(self.combo_fabricantes.get())
+        codigo_fabricante = self.on_fabricante_selected(self.combo_fabricantes.get())
         
         # Descrição multilinha
-        descricao = dados_item.get("descricao", "") if dados_item else ""
+        descricao_montada = MainViewController.get_descricao_subcategoria(subcategoria_nome,dados_item) if dados_item else ""
         lbl_desc_titulo = ctk.CTkLabel(left_frame, text="Descrição:", anchor="w")
         lbl_desc_titulo.grid(row=4, column=1, columnspan=1, sticky="w", pady=(0, 0), padx=(10, 10))
         txt_desc = ctk.CTkTextbox(left_frame, height=50)
-        txt_desc.insert("0.0", descricao_montada or descricao)
+        txt_desc.insert("0.0", descricao_montada)
         txt_desc.configure(state="disabled")
         txt_desc.grid(row=5, column=1, columnspan=2, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
@@ -432,8 +414,26 @@ class MainView(ctk.CTkFrame):
                 lbl.grid(row=row, column=0, sticky="w", pady=2)
                 row += 1
 
-        # ----- Rodapé (para botões) -----
-# depois de criar self.frame_detalhes ou no on_item_selected
-        self.footer_frame, self.quantidade, self.adicionar_pedido = criar_footer(
-            self.frame_detalhes, treeview=self.tree_itens, router=self.router
-        )
+        selected = self.tree_itens.selection()
+        if selected:
+            idx = self.tree_itens.index(selected[0])
+            item = self.itens_completos[idx]
+
+            # Atualiza a unidade de medida do item
+            subcategoria_nome = self.combo_subcategoria.get()
+            item["medida"] = MainViewController.get_unidade_medida(subcategoria_nome)
+
+            # Destroi footer antigo se existir
+            if hasattr(self, "footer_frame") and self.footer_frame:
+                self.footer_frame.destroy()
+
+            # Cria footer novo passando a combobox de fabricantes
+            from app.views import footer
+            self.footer_frame = footer.criar_footer(
+                frame_parent=self.frame_detalhes,
+                itens_completos=self.itens_completos,
+                idx_item=idx,
+                controller=PedidoViewController,
+                fab_combobox=self.combo_fabricantes
+            )
+

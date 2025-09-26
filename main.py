@@ -1,18 +1,15 @@
 # main.py
 from pathlib import Path
 import customtkinter as ctk
-import logging
 import os
 from dotenv import load_dotenv
-
-
-
+from app.utils.logger_config import get_logger  
 from app.controllers.authController import AuthController
 from app.config import FULLSCREEN, APP_TITLE, SETUP_LOGGING, LOG_LEVEL
 from app.routers.appRouter import AppRouter
 from app.config.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 load_dotenv()
