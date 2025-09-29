@@ -8,6 +8,7 @@ from app.controllers.authController import AuthController
 from app.config import FULLSCREEN, APP_TITLE, SETUP_LOGGING, LOG_LEVEL
 from app.routers.appRouter import AppRouter
 from app.config.logging_config import setup_logging
+from app.controllers.pedidoView_controller import PedidoViewController
 
 logger = get_logger(__name__)
 
@@ -17,6 +18,14 @@ load_dotenv()
 class App:
     def __init__(self):
         logger.info(f"Inicializando aplicação {os.getenv("BRAND_NAME")}")
+
+                # Define usuário logado de teste (persistente)
+        PedidoViewController.usuario_logado = {
+            "id": 1,
+            "nome": "Teste Usuario",
+            "cargo": "Analista",
+            "nivel": 3
+        }
 
 
         # CustomTkinter settings

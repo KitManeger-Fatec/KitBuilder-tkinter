@@ -1,10 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean
-from app.database import Base
-
-class Pedido(Base):
-    __tablename__ = "pedido"
-
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import (
+    Column, Integer, String, Boolean, Date, DateTime, ForeignKey
+)
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -12,18 +8,18 @@ Base = declarative_base()
 class Pedido(Base):
     __tablename__ = "pedido"
 
-
-    idpedido = Column(Integer, primary_key=True, autoincrement=True)
-    funcionario_pedido = Column(
-        "Funcionario_pedido",        # nome exato da coluna no MySQL
-        Integer,
-        ForeignKey("db_listaCompras.funcionarios.idfuncionarios"),
-        nullable=False
-    )
+    linha_pedido = Column(Integer, primary_key=True, autoincrement=True)
+    id_dados_pedido = Column(Integer, ForeignKey("dados_pedido.id_pedido"), nullable=False)
+    aceito = Column(Boolean)           # TINYINT -> Boolean
     quantidade = Column(Integer, nullable=False)
+    medida = Column(String(20), nullable=False)
     codigo = Column(String(20), nullable=False)
     produto = Column(String(200), nullable=False)
-    aceito = Column(Boolean)  # TINYINT → Boolean
+    fabricante = Column(String(45))
+    cod_fabricante = Column(String(45))
 
-    # --- Relação (opcional) ---
-    funcionario = relationship("Funcionario", back_populates="pedidos")
+    dados_pedido = relationship("DadosPedido", back_populates="itens")
+    aprovacoes = relationship("PedidoAprova", back_populates="pedido", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Pedido(linha={self.linha_pedido}, produto='{self.produto}')>"

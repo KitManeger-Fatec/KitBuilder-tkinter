@@ -2,15 +2,11 @@ import customtkinter as ctk
 
 def criar_footer(frame_parent, itens_completos, idx_item, controller, fab_combobox=None):
     footer = ctk.CTkFrame(frame_parent, height=60, fg_color="transparent")
-    footer.pack(side="bottom", fill="x", pady=(10,0))
+    footer.pack(side="bottom", fill="x", pady=(10,10))
 
     if idx_item >= len(itens_completos):
         return footer
     item = itens_completos[idx_item]
-
-    var_qtd = ctk.IntVar(value=1)
-    entry_qtd = ctk.CTkEntry(footer, width=50, textvariable=var_qtd)
-    entry_qtd.pack(side="left", padx=(5,5))
 
     def aumentar(): var_qtd.set(var_qtd.get() + 1)
     def diminuir():
@@ -19,6 +15,9 @@ def criar_footer(frame_parent, itens_completos, idx_item, controller, fab_combob
 
     btn_menos = ctk.CTkButton(footer, text="-", width=25, command=diminuir)
     btn_menos.pack(side="left", padx=(5,2))
+    var_qtd = ctk.IntVar(value=1)
+    entry_qtd = ctk.CTkEntry(footer, width=50, textvariable=var_qtd, justify="center")
+    entry_qtd.pack(side="left", padx=(5,5))
     btn_mais = ctk.CTkButton(footer, text="+", width=25, command=aumentar)
     btn_mais.pack(side="left", padx=(2,10))
 
