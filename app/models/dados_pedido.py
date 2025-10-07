@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, String, ForeignKey, DateTime, Boolean
+    Column, Integer, String, ForeignKey, DateTime
 )
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
@@ -11,7 +11,7 @@ class DadosPedido(Base):
 
     id_pedido = Column(Integer, primary_key=True, autoincrement=True)
     funcionario_pedido = Column(Integer, ForeignKey("funcionarios.idfuncionarios"), nullable=False)
-    datetime_pedido = Column(String(45), nullable=False)  # ou DateTime se preferir
+    datetime_pedido = Column(DateTime, default=datetime.now, nullable=False)  # agora é DateTime com default
     nome_projeto = Column(String(45), nullable=False)
     nome_lista = Column(String(45), nullable=False)
 

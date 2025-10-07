@@ -5,6 +5,7 @@ from .subcategoria import Subcategoria
 from .renomear import Renomear
 from .authModel import AuthModel
 from .pedido import Pedido
+from .dados_pedido import DadosPedido
 from .funcionarios import Funcionario   
 from .chefia_direta import ChefiaDireta
 from .pedido_aprova import PedidoAprova 
@@ -17,6 +18,7 @@ __all__ = ["Base",
             "Renomear", 
             "AuthModel", 
             "Pedido", 
+            "DadosPedido",
             "Funcionario", 
             "ChefiaDireta", 
             "PedidoAprova"]

@@ -12,6 +12,7 @@ class AppRouter:
         logger.debug("Inicializando AppRouter")
         self.root = root
         self.controller = None
+        self.pedido_controller = None 
         self.current_view = None
 
     def set_controller(self, controller):
@@ -77,9 +78,23 @@ class AppRouter:
         self.clear_root()
         try:
             from app.views.pedidoView import PedidoView
-            self.current_view = PedidoView(self.root, router=self)
+            from app.controllers.pedidoView_controller import PedidoViewController
+
+            # Cria a instância do controller se ainda não existir
+            if not hasattr(self, "pedido_controller") or self.pedido_controller is None:
+                self.pedido_controller = PedidoViewController()
+                # Configura usuário logado (AppState)
+                self.pedido_controller.set_usuario_logado(2)  # ID do usuário de teste
+
+            # Cria a view passando o controller
+            self.current_view = PedidoView(
+                self.root,
+                router=self,
+                controller=self.pedido_controller  # instância obrigatória
+            )
             self.current_view.atualizar_itens()
             self.current_view.pack(fill="both", expand=True)
+
         except Exception as e:
             logger.error(f"Erro ao criar view de pedidos: {e}")
 

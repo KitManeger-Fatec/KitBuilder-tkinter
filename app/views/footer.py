@@ -1,3 +1,4 @@
+
 import customtkinter as ctk
 
 def criar_footer(frame_parent, itens_completos, idx_item, controller, fab_combobox=None):

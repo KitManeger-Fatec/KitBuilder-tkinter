@@ -1,4 +1,3 @@
-# main.py
 from pathlib import Path
 import customtkinter as ctk
 import os
@@ -9,23 +8,69 @@ from app.config import FULLSCREEN, APP_TITLE, SETUP_LOGGING, LOG_LEVEL
 from app.routers.appRouter import AppRouter
 from app.config.logging_config import setup_logging
 from app.controllers.pedidoView_controller import PedidoViewController
+from app.database import engine
+from sqlalchemy import text
+from datetime import datetime
 
 logger = get_logger(__name__)
 
-
 load_dotenv()
 
+# -----------------------------
+# FUNÇÃO PARA CRIAR TABELAS
+# -----------------------------
+def criar_tabelas():
+    with engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS dados_pedido (
+                id_pedido INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                funcionario_pedido INT NOT NULL,
+                datetime_pedido VARCHAR(45) NOT NULL,
+                nome_projeto VARCHAR(45) NOT NULL,
+                nome_lista VARCHAR(45) NOT NULL,
+                CONSTRAINT fk_funcionario_pedido FOREIGN KEY (funcionario_pedido)
+                REFERENCES funcionarios(idfuncionarios)
+                ON DELETE NO ACTION ON UPDATE NO ACTION
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS pedido (
+                linha_pedido INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                id_dados_pedido INT NOT NULL,
+                aceito TINYINT NULL,
+                quantidade INT NOT NULL,
+                medida VARCHAR(20) NOT NULL,
+                codigo VARCHAR(20) NOT NULL,
+                produto VARCHAR(200) NOT NULL,
+                fabricante VARCHAR(45) NULL,
+                cod_fabricante VARCHAR(45) NULL,
+                CONSTRAINT fk_id_dados_pedido FOREIGN KEY (id_dados_pedido)
+                REFERENCES dados_pedido(id_pedido)
+                ON DELETE NO ACTION ON UPDATE NO ACTION
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS pedido_aprova (
+                idpedido_aprova INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                pedido_idpedido INT NOT NULL,
+                id_chefia_aprova INT NOT NULL,
+                pedido_aprovado TINYINT NULL,
+                CONSTRAINT fk_pedido_aprova_pedido FOREIGN KEY (pedido_idpedido)
+                REFERENCES pedido(linha_pedido)
+                ON DELETE NO ACTION ON UPDATE NO ACTION,
+                CONSTRAINT fk_pedido_aprova_chefia FOREIGN KEY (id_chefia_aprova)
+                REFERENCES chefia_direta(id_funcionario)
+                ON DELETE NO ACTION ON UPDATE NO ACTION
+            )
+        """))
+    logger.info("Tabelas do pedido criadas (se não existiam)")
+
+# -----------------------------
+# CLASSE APP
+# -----------------------------
 class App:
     def __init__(self):
-        logger.info(f"Inicializando aplicação {os.getenv("BRAND_NAME")}")
-
-                # Define usuário logado de teste (persistente)
-        PedidoViewController.usuario_logado = {
-            "id": 1,
-            "nome": "Teste Usuario",
-            "cargo": "Analista",
-            "nivel": 3
-        }
+        logger.info(f"Inicializando aplicação {os.getenv('BRAND_NAME')}")
 
 
         # CustomTkinter settings
@@ -36,7 +81,7 @@ class App:
         # Root (single instance)
         self.root = ctk.CTk()
         self.root.title(os.getenv("BRAND_NAME"))
-        logger.debug(f"Janela principal criada com título: {os.getenv("BRAND_NAME")}")
+        logger.debug(f"Janela principal criada com título: {os.getenv('BRAND_NAME')}")
 
         # start fullscreen according to config
         try:
@@ -50,7 +95,7 @@ class App:
         self.router = AppRouter(self.root)
         logger.debug("AppRouter inicializado")
 
-        # Controller -> agora exige routers externo
+        # Controller Auth
         self.controller = AuthController(root=self.root, router=self.router)
         logger.debug("AuthController inicializado")
 
@@ -58,15 +103,18 @@ class App:
         self.router.set_controller(self.controller)
         logger.debug("Controller conectado ao router")
 
-        # current view reference (opcional)
-        self.current_view = None
+        # Controller do Pedido (instância, mas não mostra ainda)
+        self.pedido_controller = PedidoViewController()
+        self.pedido_controller.set_usuario_logado(2)  # ID do usuário de teste
+
+        self.current_view = None  # ainda não há view exibida
 
         # Global keybindings: Escape => toggle fullscreen
         self.root.bind("<Escape>", lambda event: self.toggle_fullscreen())
         logger.debug("Tecla Escape vinculada para alternar fullscreen")
 
-        # Start in login screen (delegado ao routers)
-        self.show_main() #self.show_login() -> mudança 
+        # Start in main screen (login pulado ou MainView)
+        self.show_main()
         logger.info("Aplicação inicializada com sucesso")
 
     def toggle_fullscreen(self):
@@ -100,9 +148,16 @@ class App:
         self.root.mainloop()
 
 
+# -----------------------------
+# INÍCIO DO SCRIPT
+# -----------------------------
 if __name__ == "__main__":
     if SETUP_LOGGING:
         setup_logging(LOG_LEVEL)
         logger.info("Sistema de logging configurado")
+
+    criar_tabelas()  # <<< Garante que as tabelas existem
+
     app = App()
     app.run()
+''
