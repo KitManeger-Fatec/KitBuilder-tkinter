@@ -1,22 +1,21 @@
-from sqlalchemy import (
-    Column, Integer, String, ForeignKey, DateTime
-)
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+from app.database import Base
 from datetime import datetime
-
-Base = declarative_base()
 
 class DadosPedido(Base):
     __tablename__ = "dados_pedido"
 
     id_pedido = Column(Integer, primary_key=True, autoincrement=True)
     funcionario_pedido = Column(Integer, ForeignKey("funcionarios.idfuncionarios"), nullable=False)
-    datetime_pedido = Column(DateTime, default=datetime.now, nullable=False)  # agora é DateTime com default
+    datetime_pedido = Column(DateTime, default=datetime.utcnow)
     nome_projeto = Column(String(45), nullable=False)
     nome_lista = Column(String(45), nullable=False)
 
-    # relacionamento 1:N com itens de pedido
-    itens = relationship("Pedido", back_populates="dados_pedido", cascade="all, delete-orphan")
-
-    def __repr__(self):
-        return f"<DadosPedido(id={self.id_pedido}, projeto='{self.nome_projeto}')>"
+    # Relacionamentos
+    funcionario = relationship("Funcionario", back_populates="pedidos_criados")
+    pedidos = relationship(
+        "Pedido",
+        back_populates="dados_pedido",
+        cascade="all, delete-orphan"
+    )

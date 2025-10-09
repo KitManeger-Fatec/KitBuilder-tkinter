@@ -1,19 +1,15 @@
-from sqlalchemy import (
-    Column, Integer, String, Boolean, Date, DateTime, ForeignKey
-)
-from sqlalchemy.orm import relationship, declarative_base
-
-Base = declarative_base()
+from sqlalchemy import Column, Integer, ForeignKey, SmallInteger
+from sqlalchemy.orm import relationship
+from app.database import Base
 
 class PedidoAprova(Base):
     __tablename__ = "pedido_aprova"
 
     idpedido_aprova = Column(Integer, primary_key=True, autoincrement=True)
     pedido_idpedido = Column(Integer, ForeignKey("pedido.linha_pedido"), nullable=False)
-    id_chefia_aprova = Column(Integer, ForeignKey("chefia_direta.id_funcionario"), nullable=False)
-    pedido_aprovado = Column(Boolean)
+    id_chefia_aprova = Column(Integer, ForeignKey("chefia_direta.id_confere"), nullable=False)
+    pedido_aprovado = Column(SmallInteger, nullable=True)
 
-    pedido = relationship("Pedido", back_populates="aprovacoes")
-
-    def __repr__(self):
-        return f"<PedidoAprova(id={self.idpedido_aprova}, aprovado={self.pedido_aprovado})>"
+    # Relacionamentos
+    pedido = relationship("Pedido", backref="aprovacoes")
+    chefia = relationship("ChefiaDireta", backref="aprovacoes")

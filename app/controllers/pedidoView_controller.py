@@ -1,15 +1,24 @@
 import logging
+from datetime import datetime
 from app.database import SessionLocal
 from app.models.funcionarios import Funcionario
+from app.models.dados_pedido import DadosPedido
+from app.models.pedido import Pedido    
 
 logger = logging.getLogger(__name__)
 
+
 class PedidoViewController:
+    """Controlador de estado e lógica dos pedidos"""
     usuario_logado = None   # dict com campos: id, nome, cargo, nivel
     nome_projeto = ""
     nome_lista = ""
     itens = []  # lista de dicionários representando itens do pedido
+    view = None  # ponteiro opcional para a view
 
+    # ================================
+    # MÉTODOS DE ESTADO
+    # ================================
     @classmethod
     def set_usuario_logado(cls, usuario_id: int):
         """Carrega o usuário do banco e guarda no estado global."""
@@ -29,18 +38,21 @@ class PedidoViewController:
             }
 
             logger.info(f"Usuário ID {usuario_id} carregado para o estado do pedido.")
-            # 🔧 se existir view associada, atualiza labels dinamicamente
-            if hasattr(cls, "view") and cls.view:
-                cls.view.usuario.configure(text=cls.state.usuario_logado["nome"])
-                cls.view.cargo.configure(text=cls.state.usuario_logado["cargo"])
-                cls.view.nivel.configure(text=cls.state.usuario_logado["nivel"])
+
+            # Atualiza labels da view (se existir)
+            if cls.view:
+                cls.view.usuario.configure(text=cls.usuario_logado["nome"])
+                cls.view.cargo.configure(text=cls.usuario_logado["cargo"])
+                cls.view.nivel.configure(text=cls.usuario_logado["nivel"])
 
         except Exception as e:
             logger.error(f"Erro ao carregar usuário para o estado: {e}")
         finally:
             session.close()
 
-
+    # ================================
+    # MÉTODOS DE ITENS
+    # ================================
     @classmethod
     def add_item(cls, codigo, descricao, quantidade, medida, fabricante, codigo_fabricante):
         cls.itens.append({
@@ -55,39 +67,101 @@ class PedidoViewController:
 
     @classmethod
     def remover_item(cls, codigo):
-        before = len(cls.itens)
+        antes = len(cls.itens)
         cls.itens = [i for i in cls.itens if i["codigo"] != codigo]
-        after = len(cls.itens)
-        logger.info(f"Item removido: {codigo}, {before-after} removido(s)")
+        depois = len(cls.itens)
+        logger.info(f"Item removido: {codigo}, {antes - depois} removido(s)")
 
     @classmethod
     def atualizar_quantidade(cls, codigo, nova_qtd):
         """Atualiza a quantidade de um item baseado apenas no código."""
         logger.info(f"Atualizando quantidade do item {codigo} para {nova_qtd}")
-        found = False
         for item in cls.itens:
             if item["codigo"] == codigo:
                 item["quantidade"] = nova_qtd
-                found = True
                 break
-        if not found:
+        else:
             logger.warning("Item não encontrado para atualização de quantidade.")
 
-        # Atualiza a view se existir
         if cls.view:
             cls.view.atualizar_itens()
+
+    # ================================
+    # MÉTODOS DE PROJETO/LISTA
+    # ================================
     @classmethod
     def atualizar_nome_projeto(cls, nome: str):
-        """Atualiza o nome do projeto no AppState."""
-        AppState.nome_projeto = nome
+        cls.nome_projeto = nome
         logger.info(f"Nome do projeto atualizado para: {nome}")
 
     @classmethod
     def atualizar_nome_lista(cls, nome: str):
-        """Atualiza o nome da lista no AppState."""
-        AppState.nome_lista = nome
+        cls.nome_lista = nome
         logger.info(f"Nome da lista atualizado para: {nome}")
 
+    # ================================
+    # FINALIZAR PEDIDO
+    # ================================
+    @classmethod
+    def finalizar_pedido(cls):
+        logger.info("Tentando finalizar pedido...")
+
+        if not AppState.projeto_nome or not AppState.lista_nome:
+            logger.error("Nome do projeto e nome da lista são obrigatórios.")
+            raise ValueError("Nome do projeto e nome da lista são obrigatórios")
+
+        if not cls.usuario_logado:
+            logger.error("Usuário não logado.")
+            raise ValueError("Usuário não logado")
+
+        session = SessionLocal()
+        try:
+            # Cria o cabeçalho (DadosPedido)
+            dados_pedido = DadosPedido(
+                funcionario_pedido=cls.usuario_logado["id"],
+                datetime_pedido=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                nome_projeto=AppState.projeto_nome,
+                nome_lista=AppState.lista_nome
+            )
+            session.add(dados_pedido)
+            session.commit()
+            logger.debug(f"DadosPedido criado com ID: {dados_pedido.id_pedido}")
+
+            # Adiciona os itens vinculados
+            for item in cls.itens:
+                pedido = Pedido(
+                    id_dados_pedido=dados_pedido.id_pedido,
+                    aceito = True,
+                    quantidade=item["quantidade"],
+                    medida=item["medida"],
+                    codigo=item["codigo"],
+                    produto=item["produto"],
+                    fabricante=item.get("fabricante", ""),
+                    cod_fabricante=item.get("codigo_fabricante", "")
+                )
+                session.add(pedido)
+
+            session.commit()
+            logger.info(f"Pedido finalizado com sucesso. {len(cls.itens)} itens salvos.")
+
+            # Limpa estado local e global
+            cls.itens.clear()
+            AppState.projeto_nome = ""
+            AppState.lista_nome = ""
+
+            if cls.view:
+                cls.view.atualizar_itens()
+
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Erro ao finalizar pedido e salvar no BD: {e}")
+            raise
+        finally:
+            session.close()
+
+
+
+# Estado global opcional
 class AppState:
     """Armazena estado global da aplicação"""
     projeto_nome = ""
