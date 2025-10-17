@@ -16,3 +16,14 @@ class Pedido(Base):
     cod_fabricante = Column(String(45), nullable=True)
 
     dados_pedido = relationship("DadosPedido", back_populates="pedidos")
+
+    def to_dict(self):
+        return {
+            "aceito": self.aceito,
+            "quantidade": self.quantidade,
+            "medida": self.medida,
+            "codigo": self.codigo,
+            "produto": self.produto,
+            "fabricante": self.fabricante,
+            "cod_fabricante": self.cod_fabricante,
+        }

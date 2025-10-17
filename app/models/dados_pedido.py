@@ -19,3 +19,16 @@ class DadosPedido(Base):
         back_populates="dados_pedido",
         cascade="all, delete-orphan"
     )
+
+    def to_dict(self):
+        return {
+            "id_pedido": self.id_pedido,
+            "funcionario": self.funcionario.nome_funcionario if self.funcionario else None,
+            "datetime_pedido": (
+                self.datetime_pedido.isoformat()
+                if hasattr(self.datetime_pedido, "isoformat")
+                else self.datetime_pedido
+            ),
+            "nome_projeto": self.nome_projeto,
+            "nome_lista": self.nome_lista,
+        }

@@ -12,6 +12,14 @@ from app.database import engine
 from sqlalchemy import text
 from datetime import datetime
 from app.models import Base
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from app.database import SessionLocal
+import logging
+from app.models.dados_pedido import DadosPedido
+from app.models.pedido import Pedido
+from app.models.chefia_direta import ChefiaDireta 
+
 Base.metadata.create_all(bind=engine)
 
 logger = get_logger(__name__)
@@ -99,6 +107,54 @@ class App:
         logger.info("Iniciando loop principal da aplicação")
         self.root.mainloop()
 
+
+#------------------------------
+# Fast API
+#------------------------------
+
+app = FastAPI(title="Minha API MVC")
+
+
+# Dependência para injetar a sessão
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.get("/")
+def home():
+    return {"status": "ok", "mensagem": "API FastAPI conectada ao MVC!"}
+
+
+@app.get("/pedidos")
+def get_pedidos(db: Session = Depends(get_db)):
+    pedidos = db.query(DadosPedido).all()
+    return [pedido.to_dict() for pedido in pedidos]
+
+@app.get("/pedido/{id_pedido}")
+def get_linhas_pedido(id_pedido: int, db: Session = Depends(get_db)):
+    # Busca todas as linhas do pedido com id_dados_pedido = id_pedido
+    linhas = db.query(Pedido).filter(Pedido.id_dados_pedido == id_pedido, Pedido.aceito == 1).all()
+
+    # Retorna cada linha em dicionário
+    return [linha.to_dict() for linha in linhas]
+
+@app.get("/chefes/{id_funcionario}")
+def get_chefes(id_funcionario: int, db: Session = Depends(get_db)):
+    registros = db.query(ChefiaDireta).filter(ChefiaDireta.id_funcionario == id_funcionario).all()
+    
+    return [
+        {
+            "id_confere": reg.id_confere,
+            "id_funcionario": reg.id_funcionario,
+            "funcionario_nome": reg.funcionario.nome_funcionario if reg.funcionario else None,
+            "id_chefia": reg.id_chefia,
+            "chefe_nome": reg.chefe.nome_funcionario if reg.chefe else None,
+        }
+        for reg in registros
+    ]
 
 # -----------------------------
 # INÍCIO DO SCRIPT

@@ -11,3 +11,12 @@ class ChefiaDireta(Base):
 
     funcionario = relationship("Funcionario", foreign_keys=[id_funcionario], back_populates="chefia_direta")
     chefe = relationship("Funcionario", foreign_keys=[id_chefia], back_populates="subordinacoes")
+
+    def to_dict(self):
+        return {
+            "id_confere": self.id_confere,
+            "id_funcionario": self.id_funcionario,
+            "id_chefia": self.id_chefia,
+            "funcionario_nome": self.funcionario.nome_funcionario if self.funcionario else None,
+            "chefe_nome": self.chefe.nome_funcionario if self.chefe else None,
+        }
