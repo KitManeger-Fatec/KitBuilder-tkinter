@@ -73,7 +73,38 @@ class AppRouter:
         except Exception as e:
             logger.error(f"Erro ao criar view principal: {e}")
             return None
-        
+
+    def show_cadastro(self):
+            """
+            Limpa a root e cria a view de cadastro via controller.
+            Mantém referência em current_view.
+            (Assume que o controller principal possui o método criar_view_cadastro())
+            """
+            logger.info("Navegando para tela de cadastro de funcionário")
+            self.clear_root()
+            if not self.controller:
+                logger.error("Controller não definido no router")
+                return None
+
+            try:
+                from app.views.cadastroView import CadastroView
+                from app.controllers.cadastroView_controller import CadastroViewController  
+
+                if not hasattr(self, "controller") or self.controller is None:
+                    self.controller = CadastroViewController()
+                    self.controller.set_usuario_logado(2)  # ID do usuário de teste 
+
+                # O controller será responsável por instanciar a CadastroView
+                self.controller.criar_view_cadastro()
+                # Assumimos que o controller armazena a instância da view em 'cadastro_view'
+                self.current_view = self.controller.cadastro_view
+                self.current_view.pack(fill="both", expand=True) # Empacota para exibir
+                logger.debug("View de cadastro criada com sucesso")
+                return self.current_view
+            except Exception as e:
+                logger.error(f"Erro ao criar view de cadastro: {e}")
+                return None
+            
     def show_pedido(self):
         self.clear_root()
         try:

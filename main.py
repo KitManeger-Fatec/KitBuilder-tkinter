@@ -8,6 +8,7 @@ from app.config import FULLSCREEN, APP_TITLE, SETUP_LOGGING, LOG_LEVEL
 from app.routers.appRouter import AppRouter
 from app.config.logging_config import setup_logging
 from app.controllers.pedidoView_controller import PedidoViewController
+from app.controllers.cadastroView_controller import CadastroViewController
 from app.database import engine
 from sqlalchemy import text
 from datetime import datetime
@@ -66,6 +67,8 @@ class App:
         # Controller do Pedido (instância, mas não mostra ainda)
         self.pedido_controller = PedidoViewController()
         self.pedido_controller.set_usuario_logado(2)  # ID do usuário de teste
+        self.cadastro_controller = CadastroViewController()
+        self.cadastro_controller.set_usuario_logado(2)  # ID do usuário de teste
 
         self.current_view = None  # ainda não há view exibida
 
@@ -73,8 +76,8 @@ class App:
         self.root.bind("<Escape>", lambda event: self.toggle_fullscreen())
         logger.debug("Tecla Escape vinculada para alternar fullscreen")
 
-        # Start in main screen (login pulado ou MainView)
-        self.show_main()
+        # Start in main screen (View escolhida para testes)
+        self.show_cadastro()
         logger.info("Aplicação inicializada com sucesso")
 
     def toggle_fullscreen(self):
@@ -101,6 +104,11 @@ class App:
     def show_main(self):
         logger.debug("Navegando para tela principal")
         view = self.router.show_main()
+        self.current_view = view
+
+    def show_cadastro(self):
+        logger.debug("Navegando para tela de cadastro de funcionário")
+        view = self.router.show_cadastro()
         self.current_view = view
 
     def run(self):
