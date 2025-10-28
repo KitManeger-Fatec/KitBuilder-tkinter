@@ -124,7 +124,9 @@ class CadastroView(ctk.CTkFrame):
         # --- Campo CPF ---
         ctk.CTkLabel(form_holder, text="CPF", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=row, column=0, sticky="w", padx=24, pady=(8,0)); row+=1
         self.cpf_entry = ctk.CTkEntry(form_holder, width=340)
+        self.cpf_entry.bind("<KeyRelease>", self.aplicar_mascara_cpf)
         self.cpf_entry.grid(row=row, column=0, pady=(6,12), padx=20); row+=1
+
 
         # --- Campo Usuário (Login) ---
         ctk.CTkLabel(form_holder, text="Usuário (Login)", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=row, column=0, sticky="w", padx=24, pady=(8,0)); row+=1
@@ -165,6 +167,16 @@ class CadastroView(ctk.CTkFrame):
         self.novo_cargo_entry.grid(row=row, column=0, pady=(6,12))
         self.novo_cargo_entry.grid_remove()  # <- esconde o campo
         row += 1
+
+        # --- Campo Nível de funcionario  ---
+        ctk.CTkLabel(form_holder, text="Nivel do Colaborador", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=row, column=0, sticky="w", padx=24, pady=(8,0)); row+=1
+        nivel = self._carregar_nivel()
+        self.nivel_combobox = ctk.CTkComboBox(
+            form_holder, 
+            values=nivel, 
+            width=340,
+        )
+        self.nivel_combobox.grid(row=row, column=0, pady=(6,12)); row+=1
 
         # Mensagem de erro
         self.msg_label = ctk.CTkLabel(form_holder, text="", font=FONTS["text"], text_color=COLORS["error"])
@@ -286,3 +298,126 @@ class CadastroView(ctk.CTkFrame):
                 logger.info(f"Chefe adicionado: {selecionado}")
             else:
                 logger.debug(f"Chefe '{selecionado}' já está na lista de selecionados.")
+
+    def _carregar_nivel(self):
+        """Carrega o nível atual do funcionário e gera lista de níveis até 1."""
+        try:
+            # ID do funcionário logado ou em edição
+            id_funcionario = self.controller.get_usuario_logado()  
+
+            niveis = CadastroViewController.obter_nivel(id_funcionario)
+
+            if not niveis:
+                niveis = [1]  # fallback para evitar lista vazia
+
+            logger.debug(f"Níveis carregados: {niveis}")
+            return [str(n) for n in niveis]  # converte em texto para CTkComboBox
+        except Exception as e:
+            logger.error(f"Erro ao carregar níveis: {e}")
+            return ["1"]
+
+    def ao_clicar_cadastrar(self):
+        """Valida os campos antes de enviar para o controller."""
+        dados = self.get_dados()
+        faltando = []
+
+        # --- validação de preenchimento ---
+        if not dados["nome"].strip():
+            faltando.append("Nome completo")
+        if not dados["cpf"].strip():
+            faltando.append("CPF")
+        # --- validação do usuário ---
+        if not dados["usuario"].strip():
+            faltando.append("Usuário (Login)")
+        else:
+            # verifica se já existe no banco
+            if self.controller.usuario_existe(dados["usuario"]):
+                self.mostrar_erro(f"Usuário '{dados['usuario']}' já existe. Escolha outro.")
+                self.usuario_entry.focus()
+                return
+        if not dados["email"].strip():
+            faltando.append("E-mail")
+        if not dados["senha"].strip():
+            faltando.append("Senha")
+        if not dados["confirmar_senha"].strip():
+            faltando.append("Confirmação de senha")
+
+        # --- validação do cargo ---
+        if not dados["cargo"].strip() or dados["cargo"] in ["Nenhum cargo encontrado", "Erro ao carregar"]:
+            faltando.append("Cargo")
+
+        # --- validação do nível ---
+        nivel_selecionado = self.nivel_combobox.get()
+        if nivel_selecionado in ["", "Escolher Nível"]:
+            faltando.append("Nível do colaborador")
+
+        # --- validação das senhas ---
+        if dados["senha"] and dados["confirmar_senha"]:
+            if dados["senha"] != dados["confirmar_senha"]:
+                self.mostrar_erro("As senhas não coincidem.")
+                return
+
+        # --- caso haja campos faltando ---
+        if faltando:
+            msg = "Preencha os seguintes campos obrigatórios:\n- " + "\n- ".join(faltando)
+            self.mostrar_erro(msg)
+            return
+
+        # --- Tudo certo, salvar ---
+        dados["nivel"] = int(self.nivel_combobox.get())  # adiciona nível ao dict
+
+        sucesso = self.controller.salvar_funcionario(dados, self.chefes_selecionados)
+
+        if sucesso:
+            self.mostrar_erro("Funcionário cadastrado com sucesso!")  # ou criar cor verde
+            self.controller.limpar_formulario(self)
+        else:
+            self.mostrar_erro("Erro ao salvar funcionário no banco.")
+
+
+    def aplicar_mascara_cpf(self, event=None):
+        valor = self.cpf_entry.get()
+        pos = self.cpf_entry.index("insert")
+
+        # Remove tudo que não for número
+        numeros = ''.join(filter(str.isdigit, valor))
+
+        # Limita a 11 dígitos
+        numeros = numeros[:11]
+
+        # Aplica a máscara
+        cpf_formatado = ''
+        partes = []
+
+        if len(numeros) > 0:
+            partes.append(numeros[:3])
+        if len(numeros) >= 4:
+            partes.append(numeros[3:6])
+        if len(numeros) >= 7:
+            partes.append(numeros[6:9])
+        if len(numeros) >= 10:
+            partes.append(numeros[9:11])
+
+        if len(partes) >= 4:
+            cpf_formatado = '.'.join(partes[:3]) + '-' + partes[3]
+        else:
+            cpf_formatado = '.'.join(partes)
+
+        # Calcula a nova posição do cursor
+        new_pos = pos
+
+        # Ajusta o cursor se um ponto ou traço foi inserido antes do cursor
+        if event and event.keysym.lower() != "backspace":
+            count = 0
+            for i, c in enumerate(cpf_formatado):
+                if i >= new_pos:
+                    break
+                if not c.isdigit():
+                    count += 1
+            new_pos += count
+
+        # Atualiza o entry
+        self.cpf_entry.delete(0, "end")
+        self.cpf_entry.insert(0, cpf_formatado)
+        self.cpf_entry.icursor(new_pos)
+
