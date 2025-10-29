@@ -1,9 +1,12 @@
 import logging
+import requests
 from app.models.authModel import AuthModel
 from app.views.loginView import LoginView
 from app.views.mainView import MainView
 from app.views.cadastroView import CadastroView
 from app.controllers.cadastroView_controller import CadastroViewController
+from app.utils.logger_config import get_logger
+
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +66,45 @@ class AuthController:
             raise
 
     def fazer_login(self):
-        logger.debug("Iniciando processo de login")
+            logger.debug("Iniciando processo de login via API")
+            if not self.view:
+                logger.warning("Tentativa de login sem view definida")
+                return False
+
+            try:
+                usuario, senha = self.view.get_credenciais()
+                logger.debug(f"Credenciais obtidas - Usuário: {usuario}")
+
+                url = "http://127.0.0.1:8000/auth/login"  # ou IP do seu servidor
+                payload = {"username": usuario, "password": senha}
+
+                try:
+                    response = requests.post(url, json=payload)
+                except Exception as e:
+                    logger.error(f"Erro ao conectar com API: {e}")
+                    self.view.mostrar_erro("Erro de conexão com o servidor")
+                    return False
+
+                if response.status_code == 200:
+                    data = response.json()
+                    logger.info(f"Login bem-sucedido para usuário: {usuario}")
+                    if self.router and hasattr(self.router, "show_main"):
+                        self.router.show_main()
+                    return True
+                else:
+                    # detalhar mensagem de erro retornada pelo FastAPI
+                    detalhe = response.json().get("detail", "Usuário ou senha incorretos")
+                    logger.warning(f"Tentativa de login falhou: {detalhe}")
+                    self.view.mostrar_erro(detalhe)
+                    return False
+
+            except Exception as e:
+                logger.error(f"Erro durante o processo de login: {e}")
+                self.view.mostrar_erro("Erro inesperado")
+                return False
+            
+    def fazer_login_para_cadastro(self):
+        logger.debug("Iniciando processo de login via API")
         if not self.view:
             logger.warning("Tentativa de login sem view definida")
             return False
@@ -72,28 +113,32 @@ class AuthController:
             usuario, senha = self.view.get_credenciais()
             logger.debug(f"Credenciais obtidas - Usuário: {usuario}")
 
-            if self.model.verificar_credenciais(usuario, senha):
+            url = "http://127.0.0.1:8000/auth/login"  # ou IP do seu servidor
+            payload = {"username": usuario, "password": senha}
+
+            try:
+                response = requests.post(url, json=payload)
+            except Exception as e:
+                logger.error(f"Erro ao conectar com API: {e}")
+                self.view.mostrar_erro("Erro de conexão com o servidor")
+                return False
+
+            if response.status_code == 200:
+                data = response.json()
                 logger.info(f"Login bem-sucedido para usuário: {usuario}")
-                # navega para main view via routers injetado
-                if self.router and hasattr(self.router, "show_main"):
-                    try:
-                        self.router.show_main()
-                        return True
-                    except Exception as e:
-                        logger.error(f"Erro ao navegar para tela principal: {e}")
-                        # não propaga para manter teste/robustez
+                if self.router and hasattr(self.router, "show_cadastro"):
+                    self.router.show_cadastro()
                 return True
             else:
-                logger.warning(f"Tentativa de login falhou para usuário: {usuario}")
-                # exibe erro na view (se houver)
-                try:
-                    self.view.mostrar_erro("Usuário ou senha incorretos")
-                except Exception as e:
-                    logger.error(f"Erro ao exibir mensagem de erro: {e}")
+                # detalhar mensagem de erro retornada pelo FastAPI
+                detalhe = response.json().get("detail", "Usuário ou senha incorretos")
+                logger.warning(f"Tentativa de cadastro falhou: {detalhe}")
+                self.view.mostrar_erro(detalhe)
                 return False
 
         except Exception as e:
             logger.error(f"Erro durante o processo de login: {e}")
+            self.view.mostrar_erro("Erro inesperado")
             return False
 
     def destruir_view_login(self):
@@ -137,3 +182,5 @@ class AuthController:
         except Exception as e:
             logger.error(f"Erro ao criar view principal: {e}")
             raise
+
+

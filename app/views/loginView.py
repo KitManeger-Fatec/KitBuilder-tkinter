@@ -100,6 +100,16 @@ class LoginView(ctk.CTkFrame):
         )
         self.login_button.grid(row=6, column=0, pady=(10,18))
 
+        # Botão Cadastro
+        self.cadastro_button = ctk.CTkButton(
+            form_holder, text="Cadastrar",
+            command=(self.controller.fazer_login_para_cadastro if self.controller else None),
+            fg_color=COLORS["button"],  # cor diferente se quiser
+            text_color=COLORS["button_text"],
+            font=FONTS["button"], width=340, height=44
+        )
+        self.cadastro_button.grid(row=7, column=0, pady=(6,18))
+
         # Atalhos Enter
         try:
             self.usuario_entry.bind("<Return>", lambda e: self.controller.fazer_login() if self.controller else None)

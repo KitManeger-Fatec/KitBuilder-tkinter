@@ -10,16 +10,12 @@ from app.config.logging_config import setup_logging
 from app.controllers.pedidoView_controller import PedidoViewController
 from app.controllers.cadastroView_controller import CadastroViewController
 from app.database import engine
-from sqlalchemy import text
-from datetime import datetime
 from app.models import Base
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from passlib.context import CryptContext
 import logging
-from app.models.dados_pedido import DadosPedido
-from app.models.pedido import Pedido
-from app.models.chefia_direta import ChefiaDireta 
+import threading
+import uvicorn
+from api.routes import api 
 
 Base.metadata.create_all(bind=engine)
 
@@ -77,7 +73,7 @@ class App:
         logger.debug("Tecla Escape vinculada para alternar fullscreen")
 
         # Start in main screen (View escolhida para testes)
-        self.show_cadastro()
+        self.show_login()
         logger.info("Aplicação inicializada com sucesso")
 
     def toggle_fullscreen(self):
@@ -115,62 +111,21 @@ class App:
         logger.info("Iniciando loop principal da aplicação")
         self.root.mainloop()
 
-
-#------------------------------
-# Fast API
-#------------------------------
-
-app = FastAPI(title="Minha API MVC")
-
-
-# Dependência para injetar a sessão
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@app.get("/")
-def home():
-    return {"status": "ok", "mensagem": "API FastAPI conectada ao MVC!"}
-
-
-@app.get("/pedidos")
-def get_pedidos(db: Session = Depends(get_db)):
-    pedidos = db.query(DadosPedido).all()
-    return [pedido.to_dict() for pedido in pedidos]
-
-@app.get("/pedido/{id_pedido}")
-def get_linhas_pedido(id_pedido: int, db: Session = Depends(get_db)):
-    # Busca todas as linhas do pedido com id_dados_pedido = id_pedido
-    linhas = db.query(Pedido).filter(Pedido.id_dados_pedido == id_pedido, Pedido.aceito == 1).all()
-
-    # Retorna cada linha em dicionário
-    return [linha.to_dict() for linha in linhas]
-
-@app.get("/chefes/{id_funcionario}")
-def get_chefes(id_funcionario: int, db: Session = Depends(get_db)):
-    registros = db.query(ChefiaDireta).filter(ChefiaDireta.id_funcionario == id_funcionario).all()
-    
-    return [
-        {
-            "id_confere": reg.id_confere,
-            "id_funcionario": reg.id_funcionario,
-            "funcionario_nome": reg.funcionario.nome_funcionario if reg.funcionario else None,
-            "id_chefia": reg.id_chefia,
-            "chefe_nome": reg.chefe.nome_funcionario if reg.chefe else None,
-        }
-        for reg in registros
-    ]
-
 # -----------------------------
 # INÍCIO DO SCRIPT
 # -----------------------------
+
+def start_api():
+    logging.basicConfig(level=logging.DEBUG)
+    uvicorn.run(api, host="127.0.0.1", port=8000, reload=False, log_level="info")
+
 if __name__ == "__main__":
     if SETUP_LOGGING:
         setup_logging(LOG_LEVEL)
         logger.info("Sistema de logging configurado")
+
+    # Inicia FastAPI em thread paralela
+    threading.Thread(target=start_api, daemon=True).start()
 
     app = App()
     app.run()
