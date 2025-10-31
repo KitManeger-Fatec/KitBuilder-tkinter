@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 from app.utils.logger_config import get_logger
 from app.config.themes.colors import COLORS
 from app.controllers.pedidoView_controller import PedidoViewController,AppState
+from app.utils.session_manager import SessionManager
 
 
 logger = get_logger(__name__)
@@ -20,6 +21,7 @@ class PedidoView(ctk.CTkFrame):
         self.pack(fill="both", expand=True)
 
         # --- Usuário logado ---
+        PedidoViewController.set_usuario_logado(SessionManager.get_usuario_id())
         usuario = PedidoViewController.usuario_logado or {
             "nome": "Desconhecido", 
             "cargo": "nenhum", 

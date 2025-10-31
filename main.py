@@ -60,11 +60,6 @@ class App:
         self.router.set_controller(self.controller)
         logger.debug("Controller conectado ao router")
 
-        # Controller do Pedido (instância, mas não mostra ainda)
-        self.pedido_controller = PedidoViewController()
-        self.pedido_controller.set_usuario_logado(2)  # ID do usuário de teste
-        self.cadastro_controller = CadastroViewController()
-        self.cadastro_controller.set_usuario_logado(2)  # ID do usuário de teste
 
         self.current_view = None  # ainda não há view exibida
 

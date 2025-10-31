@@ -6,6 +6,7 @@ from app.views.mainView import MainView
 from app.views.cadastroView import CadastroView
 from app.controllers.cadastroView_controller import CadastroViewController
 from app.utils.logger_config import get_logger
+from app.utils.session_manager import SessionManager    
 
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,9 @@ class AuthController:
 
                 if response.status_code == 200:
                     data = response.json()
-                    logger.info(f"Login bem-sucedido para usuário: {usuario}")
+                    user_id = data.get("id") 
+                    SessionManager.set_usuario_id(user_id)  
+                    logger.info(f"Login bem-sucedido para main com ID: {user_id}")
                     if self.router and hasattr(self.router, "show_main"):
                         self.router.show_main()
                     return True
@@ -125,7 +128,9 @@ class AuthController:
 
             if response.status_code == 200:
                 data = response.json()
-                logger.info(f"Login bem-sucedido para usuário: {usuario}")
+                user_id = data.get("id") 
+                logger.info(f"Login bem-sucedido para cadastro com ID: {user_id}")
+                SessionManager.set_usuario_id(user_id)
                 if self.router and hasattr(self.router, "show_cadastro"):
                     self.router.show_cadastro()
                 return True

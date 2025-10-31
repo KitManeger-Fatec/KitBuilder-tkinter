@@ -8,6 +8,7 @@ from app.models.funcionarios import Funcionario
 from app.database import SessionLocal
 from sqlalchemy import select
 from CTkListbox import CTkListbox
+from app.utils.session_manager import SessionManager
 
 import os
 
@@ -303,7 +304,7 @@ class CadastroView(ctk.CTkFrame):
         """Carrega o nível atual do funcionário e gera lista de níveis até 1."""
         try:
             # ID do funcionário logado ou em edição
-            id_funcionario = self.controller.get_usuario_logado()  
+            id_funcionario = SessionManager.get_usuario_id()
 
             niveis = CadastroViewController.obter_nivel(id_funcionario)
 

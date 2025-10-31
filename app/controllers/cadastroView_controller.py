@@ -8,6 +8,7 @@ from app.database import SessionLocal
 from app.models.funcionarios import Funcionario
 from app.models.chefia_direta import ChefiaDireta
 from sqlalchemy.exc import SQLAlchemyError
+from app.utils.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +20,15 @@ class CadastroViewController:
 
     def set_usuario_logado(self, usuario_id: int):
         # Aqui você pega o usuário do banco ou de algum estado global
-        self.usuario_logado = self.obter_usuario_por_id(usuario_id)
+        self.usuario_logado = SessionManager.get_usuario_id()
+        logger.debug(f"Usuário logado definido no CadastroViewController: {self.usuario_logado}")
 
     def get_usuario_logado(self):
         return self.usuario_logado
 
     def obter_usuario_por_id(self, usuario_id: int):
         """Busca usuário no banco pelo ID"""
+        logger.debug(f"Buscando usuário com ID: {usuario_id}")
         with SessionLocal() as session:
             usuario = session.query(Funcionario).filter_by(idfuncionarios=usuario_id).first()
             if not usuario:

@@ -4,13 +4,13 @@ from app.database import SessionLocal
 from app.models.funcionarios import Funcionario
 from app.models.dados_pedido import DadosPedido
 from app.models.pedido import Pedido    
-
+from app.utils.session_manager import SessionManager
 logger = logging.getLogger(__name__)
 
 
 class PedidoViewController:
     """Controlador de estado e lógica dos pedidos"""
-    usuario_logado = None   # dict com campos: id, nome, cargo, nivel
+    usuario_logado = None
     nome_projeto = ""
     nome_lista = ""
     itens = []  # lista de dicionários representando itens do pedido
@@ -166,4 +166,4 @@ class AppState:
     """Armazena estado global da aplicação"""
     projeto_nome = ""
     lista_nome = ""
-    funcionario_logado_id = None
+    funcionario_logado_id = SessionManager.get_usuario_id()
