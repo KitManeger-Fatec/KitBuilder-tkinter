@@ -75,15 +75,15 @@ class LoginView(ctk.CTkFrame):
         form_holder.grid_columnconfigure(0, weight=1)
 
         # Títulos do formulário
-        ctk.CTkLabel(form_holder, text="Acesse sua conta", font=FONTS["subtitle"], text_color=COLORS["fg"]).grid(row=0, column=0, pady=(22,6), sticky="n")
+        ctk.CTkLabel(form_holder, text="Acesse sua conta", font=FONTS["subtitle2"], text_color=COLORS["fg"]).grid(row=0, column=0, pady=(22,6), sticky="n")
 
         # Campo Usuário
-        ctk.CTkLabel(form_holder, text="Usuário", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=1, column=0, sticky="w", padx=24, pady=(8,0))
+        ctk.CTkLabel(form_holder, text="Usuário", font=FONTS["button"], text_color=COLORS["muted"]).grid(row=1, column=0, sticky="w", padx=24, pady=(8,0))
         self.usuario_entry = ctk.CTkEntry(form_holder, width=340)
         self.usuario_entry.grid(row=2, column=0, pady=(6,12), padx=20)
 
         # Campo Senha
-        ctk.CTkLabel(form_holder, text="Senha", font=FONTS["text"], text_color=COLORS["muted"]).grid(row=3, column=0, sticky="w", padx=24, pady=(8,0))
+        ctk.CTkLabel(form_holder, text="Senha", font=FONTS["button"], text_color=COLORS["muted"]).grid(row=3, column=0, sticky="w", padx=24, pady=(8,0))
         self.senha_entry = ctk.CTkEntry(form_holder, show="*", width=340)
         self.senha_entry.grid(row=4, column=0, pady=(6,12))
 

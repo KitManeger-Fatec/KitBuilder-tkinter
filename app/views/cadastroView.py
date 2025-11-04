@@ -113,7 +113,7 @@ class CadastroView(ctk.CTkFrame):
         form_holder.grid_columnconfigure(0, weight=1)
 
         # Títulos do formulário
-        ctk.CTkLabel(form_holder, text="Cadastro de Colaborador", font=FONTS["subtitle"], text_color=COLORS["fg"]).grid(row=0, column=0, pady=(22,6), sticky="n")
+        ctk.CTkLabel(form_holder, text="Cadastro de Colaborador", font=FONTS["subtitle2"], text_color=COLORS["fg"]).grid(row=0, column=0, pady=(22,6), sticky="n")
 
         row = 1
         

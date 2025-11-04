@@ -43,31 +43,31 @@ class MainView(ctk.CTkFrame):
         ctk.CTkLabel(top, text=BRAND_NAME, font=FONTS["title"], text_color=COLORS["fg"]).place(x=12, y=10)
 
         self.combo_classe = ctk.CTkComboBox(top, values=["Escolha uma classe"],
-                                            command=self.on_classe_selected, width=250)
+                                            command=self.on_classe_selected, width=250,font=FONTS["button"])
         self.combo_classe.set("Escolha uma classe")
         self.combo_classe.place(x=200, y=10)
 
         self.combo_categoria = ctk.CTkComboBox(top, values=["Escolha uma categoria"],
-                                            command=self.on_categoria_selected, width=250)
+                                            command=self.on_categoria_selected, width=250,font=FONTS["button"])
         self.combo_categoria.set("Escolha uma categoria")
         self.combo_categoria.place(x=500, y=10)
 
         self.combo_subcategoria = ctk.CTkComboBox(top, values=["Escolha uma subcategoria"],
-                                                command=self.on_subcategoria_selected, width=250)
+                                                command=self.on_subcategoria_selected, width=250,font=FONTS["button"])
         self.combo_subcategoria.set("Escolha uma subcategoria")
         self.combo_subcategoria.place(x=800, y=10)
 
         self.btn_ir_pedido = ctk.CTkButton(
     top,
-    text="Pedido",
+    text="Ir para Pedido",
     command=lambda: self.router.show_pedido() if self.router else None,
-    width=150
+    width=150, font=FONTS["button"]
 )
         self.btn_ir_pedido.place(x=1080, y=10)   # ajuste de x conforme seu layout
 
         # Frame principal
         main_frame = ctk.CTkFrame(self)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=(20,5))
 
         # Filtros à esquerda
         self.frame_filtros = ctk.CTkScrollableFrame(main_frame, width=220)
@@ -78,10 +78,16 @@ class MainView(ctk.CTkFrame):
         frame_direita = ctk.CTkFrame(main_frame)
         frame_direita.pack(side="right", fill="both", expand=True)
 
-        # Detalhes do item (topo)
-        self.frame_detalhes = ctk.CTkFrame(frame_direita, height=150, fg_color=COLORS["panel"])
-        self.frame_detalhes.pack(fill="x", side="top", pady=(0, 10))
-        self.frame_detalhes.pack_propagate(False)
+        # frame dos detalhes
+        self.frame_detalhes = ctk.CTkScrollableFrame(frame_direita, fg_color=COLORS["panel"])
+        self.frame_detalhes.pack(side="top", fill="both", expand=True)
+
+        # frame fixo do footer
+        self.footer_container = ctk.CTkFrame(frame_direita, fg_color="transparent", height=60)
+        self.footer_container.pack(fill="x")
+        self.footer_container.pack_propagate(False)  # impede que o frame redimensione baseado no conteúdo
+
+
 
         # Treeview (inferior)
         self.frame_tree = ctk.CTkFrame(frame_direita)
@@ -102,10 +108,12 @@ class MainView(ctk.CTkFrame):
         self.tree_scroll_x.config(command=self.tree_itens.xview)
         self.tree_scroll_y.pack(side="right", fill="y")
         self.tree_scroll_x.pack(side="bottom", fill="x")
-        self.tree_itens.pack(fill="both", expand=True, pady=(0, 5))
+        self.tree_itens.pack(fill="both", expand=True, pady=(0, 0))
 
         # Bind seleção
         self.tree_itens.bind("<<TreeviewSelect>>", self.on_item_selected)
+
+        self.carregar_item_vazio()
 
     # ---------------- Carregar classes ----------------
     def _carregar_classes(self):
@@ -343,23 +351,30 @@ class MainView(ctk.CTkFrame):
             if idx < len(self.itens_completos):
                 dados_item = self.itens_completos[idx]
                 subcategoria_nome = self.combo_subcategoria.get()
+                if dados_item is None:
+                    dados_item = {
+                        "codigo_produto": "0000.0000.0000.0000",
+                        "descricao": "",
+                        "fabricante": "",
+                        "imagem": os.getenv("assets/image", "Logo.jpg"),
+        }
+
 
         # Limpa o frame de detalhes
         for w in self.frame_detalhes.winfo_children():
             w.destroy()
-        self.frame_detalhes.configure(height=200)
-        self.frame_detalhes.pack_propagate(False)
+        self.frame_detalhes.pack(side="top", fill="both", expand=True)
 
         # Configuração do grid principal para 3 colunas
-        self.frame_detalhes.grid_columnconfigure(0, weight=0, minsize=400) # Coluna da esquerda fixa
+        self.frame_detalhes.grid_columnconfigure(0, weight=0, minsize=300) # Coluna da esquerda fixa
         self.frame_detalhes.grid_columnconfigure(1, weight=1) # Coluna da direita se expande
         self.frame_detalhes.grid_rowconfigure(0, weight=1) # Permite que a linha principal se expanda
 
         # ----- Painel Esquerdo (Fixo) -----
         left_frame = ctk.CTkFrame(self.frame_detalhes, fg_color="transparent")
-        left_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10,0))
         left_frame.grid_columnconfigure(0, weight=0, minsize=150) # Coluna da imagem
-        left_frame.grid_columnconfigure(1, weight=0, minsize=300) # Coluna dos textos se expande
+        left_frame.grid_columnconfigure(1, weight=0, minsize=200) # Coluna dos textos se expande
         left_frame.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=0)
         left_frame.grid_rowconfigure(5, weight=1) # Apenas a linha da descrição se expande verticalmente
 
@@ -402,7 +417,7 @@ class MainView(ctk.CTkFrame):
 
         # ----- Painel Direito (Expansível) -----
         right_frame_container = ctk.CTkScrollableFrame(self.frame_detalhes, fg_color="transparent")
-        right_frame_container.grid(row=0, column=1, sticky="nsew", padx=(10, 10), pady=10)
+        right_frame_container.grid(row=0, column=1, sticky="nsew", padx=(10, 10), pady=(10,0))
 
         if dados_item:
             row = 0
@@ -425,15 +440,90 @@ class MainView(ctk.CTkFrame):
 
             # Destroi footer antigo se existir
             if hasattr(self, "footer_frame") and self.footer_frame:
-                self.footer_frame.destroy()
+                self.footer_container.destroy()
 
             # Cria footer novo passando a combobox de fabricantes
             from app.views import footer
-            self.footer_frame = footer.criar_footer(
-                frame_parent=self.frame_detalhes,
+            for w in self.footer_container.winfo_children():
+                w.destroy()
+
+            footer.criar_footer(
+                frame_parent=self.footer_container,
                 itens_completos=self.itens_completos,
                 idx_item=idx,
                 controller=PedidoViewController,
                 fab_combobox=self.combo_fabricantes
-            )
+)
+    def carregar_item_vazio(self):
 
+        # ----- Dados padrão -----
+        dados_item = {
+            "codigo_produto": "0000.0000.0000.0000",
+            "descricao": "",
+            "fabricante": "",
+            "imagem": "Logo.jpg",
+        }
+        subcategoria_nome = ""
+
+        # ----- Limpa o frame de detalhes -----
+        for w in self.frame_detalhes.winfo_children():
+            w.destroy()
+
+        self.frame_detalhes.pack(side="top", fill="both", expand=True)
+
+        # Grid principal
+        self.frame_detalhes.grid_columnconfigure(0, weight=0, minsize=300)
+        self.frame_detalhes.grid_columnconfigure(1, weight=1)
+        self.frame_detalhes.grid_rowconfigure(0, weight=1)
+
+        # ----- Painel esquerdo -----
+        left_frame = ctk.CTkFrame(self.frame_detalhes, fg_color="transparent")
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+
+        left_frame.grid_columnconfigure(0, weight=0, minsize=150)
+        left_frame.grid_columnconfigure(1, weight=0, minsize=200)
+        left_frame.grid_rowconfigure((0, 1, 2, 3, 4, 5), weight=0)
+        left_frame.grid_rowconfigure(5, weight=1)
+
+        # Imagem
+        img_file = "Logo.jpg"
+        img_path = os.path.join(os.getcwd(), "assets", "images", img_file)
+
+        if os.path.exists(img_path):
+            try:
+                from PIL import Image
+                pil_img = Image.open(img_path).resize((150, 200))
+                ctk_img = ctk.CTkImage(pil_img, size=(150, 200))
+                lbl_img = ctk.CTkLabel(left_frame, image=ctk_img, text="")
+                lbl_img.image = ctk_img
+                lbl_img.grid(row=0, column=0, rowspan=6, sticky="nw", padx=(0, 10))
+            except:
+                pass
+
+        # Código do produto (vazio)
+        lbl_codigo_titulo = ctk.CTkLabel(left_frame, text="Código do Produto:")
+        lbl_codigo_titulo.grid(row=0, column=1, sticky="w", padx=10)
+
+        lbl_codigo_val = ctk.CTkLabel(left_frame, text=dados_item["codigo_produto"],
+                                    font=ctk.CTkFont(size=18, weight="bold"))
+        lbl_codigo_val.grid(row=1, column=1, sticky="w", padx=10)
+
+        # Fabricante vazio
+        self.lbl_nome_fab = ctk.CTkLabel(left_frame, text="Nome do Fabricante:")
+        self.lbl_nome_fab.grid(row=2, column=1, sticky="w", padx=10)
+
+        self.lbl_cod_fab = ctk.CTkLabel(left_frame, text="Código do Fabricante:")
+        self.lbl_cod_fab.grid(row=3, column=1, sticky="w", padx=10)
+
+        # Descrição vazia
+        lbl_desc_titulo = ctk.CTkLabel(left_frame, text="Descrição:")
+        lbl_desc_titulo.grid(row=4, column=1, sticky="w", padx=10)
+
+        txt_desc = ctk.CTkTextbox(left_frame, height=50)
+        txt_desc.insert("0.0", "")
+        txt_desc.configure(state="disabled")
+        txt_desc.grid(row=5, column=1, columnspan=2, sticky="nsew", pady=(0, 10), padx=(0, 10))
+
+        # ----- Painel direito (vazio) -----
+        right_frame_container = ctk.CTkScrollableFrame(self.frame_detalhes, fg_color="transparent")
+        right_frame_container.grid(row=0, column=1, sticky="nsew", padx=(10, 10), pady=0)

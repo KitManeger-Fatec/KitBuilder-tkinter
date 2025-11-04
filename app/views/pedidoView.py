@@ -4,6 +4,8 @@ from app.utils.logger_config import get_logger
 from app.config.themes.colors import COLORS
 from app.controllers.pedidoView_controller import PedidoViewController,AppState
 from app.utils.session_manager import SessionManager
+from app.config.themes.fonts import FONTS
+from app.config.themes.colors import COLORS
 
 
 logger = get_logger(__name__)
@@ -17,71 +19,145 @@ class PedidoView(ctk.CTkFrame):
 
         if self.controller is None:
             raise ValueError("PedidoView precisa de um controller válido")
-
-        self.pack(fill="both", expand=True)
-
-        # --- Usuário logado ---
+        
+    
+                # --- Usuário logado ---
         PedidoViewController.set_usuario_logado(SessionManager.get_usuario_id())
         usuario = PedidoViewController.usuario_logado or {
             "nome": "Desconhecido", 
             "cargo": "nenhum", 
             "nivel": "0"
-            }
+        }
 
-        # ----- FRAME SUPERIOR -----
-        self.frame_top = ctk.CTkFrame(self)
-        self.frame_top.pack(fill="x", padx=10, pady=5)
+        self.pack(fill="both", expand=True)
 
-        # Labels Usuário, Cargo, Nível
-        self.label_usuario = ctk.CTkLabel(self.frame_top, text="Usuário Logado:")
-        self.label_usuario.grid(row=0, column=0, padx=5, pady=5)
-        self.usuario = ctk.CTkLabel(self.frame_top, text=usuario.get("nome", ""))
-        self.usuario.grid(row=0, column=1, padx=5, pady=5, columnspan=3, sticky="w")
+        # ----- FRAME SUPERIOR (Top Bar Moderna) -----
+        self.frame_top = ctk.CTkFrame(self, fg_color=COLORS["panel"], corner_radius=12)
+        self.frame_top.pack(fill="x", padx=15, pady=15)
 
-        self.label_cargo = ctk.CTkLabel(self.frame_top, text="Cargo:")
-        self.label_cargo.grid(row=0, column=4, padx=5, pady=5)
-        self.cargo = ctk.CTkLabel(self.frame_top, text=usuario.get("cargo", ""))
-        self.cargo.grid(row=0, column=5, padx=5, pady=5, columnspan=3, sticky="w")
+        # Grade mais proporcional
+        self.frame_top.grid_columnconfigure(0, weight=0)
+        self.frame_top.grid_columnconfigure(1, weight=0)
+        self.frame_top.grid_columnconfigure(2, weight=0)
+        self.frame_top.grid_columnconfigure(3, weight=0)
+        self.frame_top.grid_columnconfigure(4, weight=0)
+        self.frame_top.grid_columnconfigure(5, weight=0)
+        self.frame_top.grid_columnconfigure(6, weight=1)
 
-        self.label_nivel = ctk.CTkLabel(self.frame_top, text="Nível:")
-        self.label_nivel.grid(row=0, column=8, padx=5, pady=5)
-        self.nivel = ctk.CTkLabel(self.frame_top, text=usuario.get("nivel", ""))
-        self.nivel.grid(row=0, column=9, padx=5, pady=5, columnspan=2, sticky="w")
+        # Estilos consistentes
+        LABEL = FONTS["subtitle"]
+        VALUE = FONTS["text"]
+        PADX = 10
+        PADY = 5
 
-        # Nome do Projeto
-        self.label_nome_projeto = ctk.CTkLabel(self.frame_top, text="Nome do Projeto:")
-        self.label_nome_projeto.grid(row=1, column=0, padx=5, pady=5)
-        self.entry_projeto = ctk.CTkEntry(self.frame_top)
-        self.entry_projeto.grid(row=1, column=1, padx=5, pady=5, columnspan=9)
+        # ---- Linha 1: Usuário | Cargo | Nível ----
+        self.label_usuario = ctk.CTkLabel(self.frame_top, text="Usuário:", font=LABEL)
+        self.label_usuario.grid(row=0, column=1, padx=PADX, pady=PADY, sticky="w")
+
+        self.usuario = ctk.CTkLabel(self.frame_top, text=usuario.get("nome", ""), font=VALUE)
+        self.usuario.grid(row=0, column=2, padx=(0,PADX), pady=PADY, sticky="w")
+
+        self.label_cargo = ctk.CTkLabel(self.frame_top, text="Cargo:", font=LABEL)
+        self.label_cargo.grid(row=0, column=3, padx=PADX, pady=PADY, sticky="w")
+
+        self.cargo = ctk.CTkLabel(self.frame_top, text=usuario.get("cargo", ""), font=VALUE)
+        self.cargo.grid(row=0, column=4, padx=(0,PADX), pady=PADY, sticky="w")
+
+        self.label_nivel = ctk.CTkLabel(self.frame_top, text="Nível:", font=LABEL)
+        self.label_nivel.grid(row=0, column=5, padx=PADX, pady=PADY, sticky="w")
+
+        self.nivel = ctk.CTkLabel(self.frame_top, text=usuario.get("nivel", ""), font=VALUE)
+        self.nivel.grid(row=0, column=6, padx=(0,PADX), pady=PADY, sticky="w")
+
+        # Margem entre seção 1 e 2
+        ctk.CTkLabel(self.frame_top, text="").grid(row=1, column=0)
+
+        # ---- Linha 2: Nome do Projeto ----
+        self.label_nome_projeto = ctk.CTkLabel(self.frame_top, text="Nome do Projeto:", font=LABEL)
+        self.label_nome_projeto.grid(row=2, column=0, padx=PADX, pady=PADY, sticky="w")
+
+        self.entry_projeto = ctk.CTkEntry(self.frame_top, height=35, corner_radius=8)
+        self.entry_projeto.grid(row=2, column=1, columnspan=5, padx=0, pady=PADY, sticky="we")
         self.entry_projeto.insert(0, AppState.projeto_nome)
         self.entry_projeto.bind("<KeyRelease>", self.atualizar_projeto)
 
-        # Nome da Lista
-        self.label_nome_lista = ctk.CTkLabel(self.frame_top, text="Nome da Lista:")
-        self.label_nome_lista.grid(row=2, column=0, padx=5, pady=5)
-        self.entry_lista = ctk.CTkEntry(self.frame_top)
-        self.entry_lista.grid(row=2, column=1, padx=5, pady=5, columnspan=9)
+        # ---- Linha 3: Nome da Lista ----
+        self.label_nome_lista = ctk.CTkLabel(self.frame_top, text="Nome da Lista:", font=LABEL)
+        self.label_nome_lista.grid(row=3, column=0, padx=PADX, pady=PADY, sticky="w")
+
+        self.entry_lista = ctk.CTkEntry(self.frame_top, height=35, corner_radius=8)
+        self.entry_lista.grid(row=3, column=1, columnspan=5, padx=0, pady=PADY, sticky="we")
         self.entry_lista.insert(0, AppState.lista_nome)
         self.entry_lista.bind("<KeyRelease>", self.atualizar_lista)
 
+
         # ----- FRAME EDIÇÃO DE ITEM -----
         self.frame_edicao = ctk.CTkFrame(self)
-        self.frame_edicao.pack(fill="x", padx=10, pady=5)
+        self.frame_edicao.pack(fill="x", padx=10, pady=10)
 
-        self.entry_qtd = ctk.CTkEntry(self.frame_edicao, placeholder_text="QTD")
+        # Grid mais organizado
+        self.frame_edicao.grid_columnconfigure(0, weight=0)   # qtd
+        self.frame_edicao.grid_columnconfigure(1, weight=0)   # codigo
+        self.frame_edicao.grid_columnconfigure(2, weight=1)   # descrição grande
+        self.frame_edicao.grid_columnconfigure(3, weight=0)   # remover
+        self.frame_edicao.grid_columnconfigure(4, weight=0)   # voltar
+        self.frame_edicao.grid_columnconfigure(5, weight=0)   # encerrar
+
+        PADX = 8
+        PADY = 6
+
+        # QTD
+        self.entry_qtd = ctk.CTkEntry(
+            self.frame_edicao,
+            placeholder_text="Quantidade",
+            width=80
+        )
         self.entry_qtd.bind("<Return>", self.atualizar_quantidade)
-        self.entry_qtd.grid(row=0, column=0, padx=5)
+        self.entry_qtd.grid(row=0, column=0, padx=PADX, pady=PADY, sticky="we")
 
-        self.entry_codigo = ctk.CTkEntry(self.frame_edicao, placeholder_text="Código", state="disabled")
-        self.entry_codigo.grid(row=0, column=1, padx=5)
+        # Código
+        self.entry_codigo = ctk.CTkEntry(self.frame_edicao, placeholder_text="Código do produto", width=120, state="disabled")
+        self.entry_codigo.grid(row=0, column=1, padx=PADX, pady=PADY)
 
-        self.entry_desc = ctk.CTkEntry(self.frame_edicao, placeholder_text="Descrição", state="disabled")
-        self.entry_desc.grid(row=0, column=2, padx=5)
+        # coluna da descrição
+        self.frame_edicao.grid_columnconfigure(2, weight=1, minsize=200)
 
-        self.btn_remover = ctk.CTkButton(self.frame_edicao, text="Remover", command=self.remover_item)
-        self.btn_remover.grid(row=0, column=3, padx=5)
+        self.entry_desc = ctk.CTkEntry(
+            self.frame_edicao,
+            placeholder_text="Descrição do produto",
+            state="disabled"
+        )
+        self.entry_desc.grid(row=0, column=2, padx=PADX, pady=PADY, sticky="we")
+
+        # Botão Remover
+        self.btn_remover = ctk.CTkButton(self.frame_edicao, text="Remover Item", width=100, 
+                                        font=FONTS["button"],command=self.remover_item)
+        self.btn_remover.grid(row=0, column=3, padx=PADX, pady=PADY)
+
+        # --- Botão Voltar (agora na barra de edição) ---
+        self.btn_voltar = ctk.CTkButton(
+            self.frame_edicao,
+            text="Voltar à Tela Principal",
+            width=100,font=FONTS["button"],
+            command=lambda: router.show_main() if router else None
+        )
+        self.btn_voltar.grid(row=0, column=4, padx=PADX, pady=PADY)
+
+        # --- Botão Encerrar Pedido (agora na barra de edição) ---
+        self.btn_encerrar = ctk.CTkButton(
+            self.frame_edicao,
+            text="Encerrar Pedido",
+            width=150,font=FONTS["button"],
+            fg_color=COLORS["danger"],
+            command=self.encerrar_pedido
+        )
+        self.btn_encerrar.grid(row=0, column=5, padx=(PADX,100), pady=PADY)
+
 
         # ----- TREEVIEW ITENS -----
+        style = ttk.Style()
+        style.configure("Treeview", font=FONTS["text_peq"])  # Fonte das linhas
+        style.configure("Treeview.Heading", font=FONTS["textBold_peq"])  # Cabeçalhos
         self.tree_itens = ttk.Treeview(
             self,
             columns=("quantidade", "medida", "codigo", "produto", "fabricante", "cod_fab"),
@@ -100,24 +176,6 @@ class PedidoView(ctk.CTkFrame):
         self.tree_itens.pack(fill="both", expand=True, padx=20, pady=10)
         self.tree_itens.bind("<<TreeviewSelect>>", self.on_item_selected)
 
-        # ----- BOTÕES -----
-        self.frame_botoes = ctk.CTkFrame(self)
-        self.frame_botoes.pack(fill="x", pady=10)
-
-        self.btn_voltar = ctk.CTkButton(
-            self.frame_botoes,
-            text="Voltar",
-            command=lambda: router.show_main() if router else None
-        )
-        self.btn_voltar.pack(side="left", padx=10)
-
-        self.btn_encerrar = ctk.CTkButton(
-            self.frame_botoes,
-            text="Encerrar Pedido",
-            fg_color=COLORS["danger"],
-            command=self.encerrar_pedido
-        )
-        self.btn_encerrar.pack(side="right", padx=10)
 
         # Atualiza treeview
         self.atualizar_itens()
