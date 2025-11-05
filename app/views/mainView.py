@@ -90,6 +90,9 @@ class MainView(ctk.CTkFrame):
 
 
         # Treeview (inferior)
+        style = ttk.Style()
+        style.configure("Treeview", font=FONTS["text_peq"])  # Fonte das linhas
+        style.configure("Treeview.Heading", font=FONTS["textBold_peq"])  # Cabeçalhos
         self.frame_tree = ctk.CTkFrame(frame_direita)
         self.frame_tree.pack(fill="both", expand=True)
 
@@ -433,6 +436,7 @@ class MainView(ctk.CTkFrame):
         if selected:
             idx = self.tree_itens.index(selected[0])
             item = self.itens_completos[idx]
+            descricao_montada = MainViewController.get_descricao_subcategoria(subcategoria_nome,item)
 
             # Atualiza a unidade de medida do item
             subcategoria_nome = self.combo_subcategoria.get()
@@ -452,7 +456,8 @@ class MainView(ctk.CTkFrame):
                 itens_completos=self.itens_completos,
                 idx_item=idx,
                 controller=PedidoViewController,
-                fab_combobox=self.combo_fabricantes
+                fab_combobox=self.combo_fabricantes,
+                descricao_montada=descricao_montada
 )
     def carregar_item_vazio(self):
 

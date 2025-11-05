@@ -2,8 +2,9 @@
 import customtkinter as ctk
 from app.config.themes.colors import COLORS
 from app.config.themes.fonts import FONTS   
+from app.controllers.mainView_controller import MainViewController
 
-def criar_footer(frame_parent, itens_completos, idx_item, controller, fab_combobox=None):
+def criar_footer(frame_parent, itens_completos, idx_item, controller, fab_combobox=None, descricao_montada=None):
 
     footer = ctk.CTkFrame(frame_parent, height=40, fg_color="transparent")
     footer.pack(side="bottom", fill="x", pady=(0,10))
@@ -29,6 +30,7 @@ def criar_footer(frame_parent, itens_completos, idx_item, controller, fab_combob
     # Pega o fabricante selecionado da combobox
         fabricante = fab_combobox.get() if fab_combobox else item.get("fabricante", "")
         
+        descricao = descricao_montada if descricao_montada else item.get("descricao_produto", "")
         # Se estiver como "Escolha um Fabricante" ou "Todos", envia vazio
         if fabricante in ("Escolha um Fabricante", "Todos"):
             fabricante = ""
@@ -39,7 +41,7 @@ def criar_footer(frame_parent, itens_completos, idx_item, controller, fab_combob
 
         controller.add_item(
             codigo=item.get("codigo_produto", ""),
-            descricao=item.get("descricao", ""),
+            descricao=descricao,
             quantidade=var_qtd.get(),
             medida=item.get("medida", ""),
             fabricante=fabricante,

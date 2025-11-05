@@ -155,9 +155,7 @@ class PedidoView(ctk.CTkFrame):
 
 
         # ----- TREEVIEW ITENS -----
-        style = ttk.Style()
-        style.configure("Treeview", font=FONTS["text_peq"])  # Fonte das linhas
-        style.configure("Treeview.Heading", font=FONTS["textBold_peq"])  # Cabeçalhos
+
         self.tree_itens = ttk.Treeview(
             self,
             columns=("quantidade", "medida", "codigo", "produto", "fabricante", "cod_fab"),
