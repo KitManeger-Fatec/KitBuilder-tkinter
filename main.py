@@ -16,6 +16,7 @@ import logging
 import threading
 import uvicorn
 from api.routes import api 
+from web_app.web import web  # Importa a aplicação Flask
 
 Base.metadata.create_all(bind=engine)
 
@@ -107,21 +108,33 @@ class App:
         self.root.mainloop()
 
 # -----------------------------
-# INÍCIO DO SCRIPT
+# INÍCIO DO SCRIPT DA API 
 # -----------------------------
 
 def start_api():
     logging.basicConfig(level=logging.DEBUG)
     uvicorn.run(api, host="127.0.0.1", port=8000, reload=False, log_level="info")
 
+# -----------------------------
+# INÍCIO DO SCRIPT DO SITE 
+# -----------------------------
+def start_flask():
+    web.run(host="127.0.0.1", port=5001, debug=False, use_reloader=False)
+
 if __name__ == "__main__":
     if SETUP_LOGGING:
         setup_logging(LOG_LEVEL)
         logger.info("Sistema de logging configurado")
 
-    # Inicia FastAPI em thread paralela
+    # INICIA FASTAPI EM THREAD
     threading.Thread(target=start_api, daemon=True).start()
+    logger.info("FastAPI iniciada em http://127.0.0.1:8000")
 
+    # INICIA FLASK EM OUTRA THREAD
+    threading.Thread(target=start_flask, daemon=True).start()
+    logger.info("Flask iniciado em http://127.0.0.1:5001")
+
+    # INICIA TKINTER (principal)
     app = App()
     app.run()
 ''

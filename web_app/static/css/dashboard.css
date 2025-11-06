@@ -1,0 +1,96 @@
+/* CONFIGURAÇÃO GERAL */
+body {
+    margin: 0;
+    background: #1a1a1a;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+}
+
+/* PAINEL ESQUERDO */
+.sidebar {
+    width: 260px;
+    background: #2c2c2c;
+    padding: 20px;
+    border-right: 1px solid #444;
+}
+
+.sidebar h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.sidebar p {
+    margin: 6px 0;
+    color: #bbb;
+}
+
+/* ÁREA PRINCIPAL */
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+/* LISTA DE PEDIDOS */
+.pedidos-list {
+    background: #2b2b2b;
+    border-radius: 10px;
+    padding: 10px;
+    height: 40%;
+    overflow-y: auto;
+}
+
+.pedido-link {
+    text-decoration: none;
+}
+
+/* ESTILO DO PEDIDO */
+.pedido-item {
+    padding: 12px;
+    background: #383838;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    color: white;
+    border: 1px solid transparent;
+}
+
+.pedido-item:hover {
+    background: #505050;
+}
+
+/* Quando o usuário é chefia direta */
+.pedido-item.chefia {
+    background: #0055aa !important;
+}
+
+/* Pedido selecionado */
+.pedido-item.selecionado {
+    border-color: #00ccff;
+    background: #444;
+}
+
+/* LISTA DE ITENS */
+.itens-list {
+    background: #2b2b2b;
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 12px;
+    height: 50%;
+    overflow-y: auto;
+}
+
+.item {
+    background: #393939;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 6px;
+}
+
+.nenhum-item {
+    color: #aaa;
+    padding: 10px;
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+
+<body>
+
+    <!-- Painel Esquerdo -->
+    <div class="sidebar">
+        <h2>{{ funcionario.nome }}</h2>
+        <p><b>Cargo:</b> {{ funcionario.cargo }}</p>
+        <p><b>Nível:</b> {{ funcionario.nivel }}</p>
+    </div>
+
+    <!-- Área principal -->
+    <div class="content">
+
+        <!-- Lista de pedidos -->
+        <div class="pedidos-list">
+            <h3>Pedidos</h3>
+
+            {% for p in pedidos %}
+            <a class="pedido-link" href="/dashboard/{{ user_id }}/pedido/{{ p.id_dados_pedido }}">
+                <div class="pedido-item 
+                        {% if p.id_dados_pedido in ids_chefia %} chefia {% endif %}
+                        {% if pedido_selecionado == p.id_dados_pedido %} selecionado {% endif %}">
+                    
+                    <span><b>Pedido #{{ p.id_dados_pedido }}</b> — {{ p.nome_pedido }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Itens -->
+        <div class="itens-list">
+            <h3>
+                Itens do Pedido 
+                {% if pedido_selecionado %}
+                #{{ pedido_selecionado }}
+                {% else %}
+                (nenhum selecionado)
+                {% endif %}
+            </h3>
+
+            {% if itens|length == 0 %}
+            <p class="nenhum-item">Nenhum item selecionado.</p>
+            {% endif %}
+
+            {% for item in itens %}
+            <div class="item">
+                <b>{{ item.nome_item }}</b><br>
+                Quantidade: {{ item.quantidade }}<br>
+                Medida: {{ item.medida }}
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+</body>
+
+</html>

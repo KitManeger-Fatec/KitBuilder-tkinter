@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- LEFT (logo) -->
+    <div class="left-panel">
+        <img src="{{ url_for('static', filename='images/Logo.jpg') }}" class="logo">
+        <h2>{{ getenv("BRAND_NAME") or "Minha Marca" }}</h2>
+        <p>{{ getenv("BRAND_EXPLANATION") or "Sistema de Controle e Gestão" }}</p>
+    </div>
+
+    <!-- RIGHT (form) -->
+    <div class="right-panel">
+        <div class="form-box">
+
+            <h3>Acesse sua conta</h3>
+
+            {% if erro %}
+            <div class="erro">{{ erro }}</div>
+            {% endif %}
+
+            <form action="/login" method="POST">
+
+                <label>Usuário</label>
+                <input type="text" name="usuario" required>
+
+                <label>Senha</label>
+                <input type="password" name="senha" required>
+
+                <button type="submit">Entrar</button>
+
+                <button type="button" onclick="alert('Crie a rota de cadastro')">
+                    Cadastrar
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
