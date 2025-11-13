@@ -1,3 +1,4 @@
+<!-- templates/dashboard.html-->
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -6,16 +7,43 @@
     <title>Dashboard</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabela.css') }}">
 </head>
 
 <body>
 
-    <!-- Painel Esquerdo -->
-    <div class="sidebar">
-        <h2>{{ funcionario.nome }}</h2>
-        <p><b>Cargo:</b> {{ funcionario.cargo }}</p>
-        <p><b>Nível:</b> {{ funcionario.nivel }}</p>
+
+   <!-- // painel esquerdo -->
+<div class="sidebar">
+
+    <!-- PARTE SUPERIOR -->
+    <div class="sidebar-top">
+        <div class="sidebar-info">
+            <h2>{{ funcionario.nome }}</h2>
+
+            <div class="info-block">
+                <span class="label">Cargo:</span>
+                <span class="value">{{ funcionario.cargo }}</span>
+            </div>
+
+            <div class="info-block">
+                <span class="label">Nível:</span>
+                <span class="value">{{ funcionario.nivel }}</span>
+            </div>
+        </div>
     </div>
+
+    <!-- PARTE INFERIOR (LOGO) -->
+    <div id="produto-imagem-container" style="text-align:center; margin-top:20px;">
+        <img id="produto-imagem"
+        src="{{ url_for('dashboard_bp.serve_image', filename='Logo.jpg') }}"
+        alt="Logo"
+        style="max-width:300px; display:block; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.2);">
+
+    </div>
+
+</div>
+
 
     <!-- Área principal -->
     <div class="content">
@@ -25,12 +53,9 @@
             <h3>Pedidos</h3>
 
             {% for p in pedidos %}
-            <a class="pedido-link" href="/dashboard/{{ user_id }}/pedido/{{ p.id_dados_pedido }}">
-                <div class="pedido-item 
-                        {% if p.id_dados_pedido in ids_chefia %} chefia {% endif %}
-                        {% if pedido_selecionado == p.id_dados_pedido %} selecionado {% endif %}">
-                    
-                    <span><b>Pedido #{{ p.id_dados_pedido }}</b> — {{ p.nome_pedido }}</span>
+            <a class="pedido-link" href="/dashboard/{{ user_id }}/pedido/{{ p.id_pedido }}">
+                <div class="pedido-item{% if p.id_pedido in ids_chefia %} chefia{% endif %}{% if pedido_selecionado == p.id_pedido %} selecionado{% endif %}">
+                    <span><b>Pedido #{{ p.id_pedido }}</b> — {{ p.nome_projeto }} - {{ p.nome_lista }}</span>
                 </div>
             </a>
             {% endfor %}
@@ -48,19 +73,45 @@
             </h3>
 
             {% if itens|length == 0 %}
-            <p class="nenhum-item">Nenhum item selecionado.</p>
-            {% endif %}
+                <p class="nenhum-item">Nenhum item encontrado.</p>
+            {% else %}
 
-            {% for item in itens %}
-            <div class="item">
-                <b>{{ item.nome_item }}</b><br>
-                Quantidade: {{ item.quantidade }}<br>
-                Medida: {{ item.medida }}
-            </div>
-            {% endfor %}
+            <table class="tabela-itens resizable">
+                <thead>
+                    <tr>
+                        <th>Qtd</th>
+                        <th>Medida</th>
+                        <th>Código</th>
+                        <th>Produto</th>
+                        <th>Fabricante</th>
+                        <th>Cód. Fabricante</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for item in itens %}
+                    <tr data-foto="{{ item.foto }}">
+                        <td>{{ item.quantidade }}</td>
+                        <td>{{ item.medida }}</td>
+                        <td>{{ item.codigo }}</td>
+                        <td>{{ item.produto }}</td>
+                        <td>{{ item.fabricante }}</td>
+                        <td>{{ item.cod_fabricante }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% endif %}
         </div>
 
     </div>
+
+    <script src="{{ url_for('static', filename='js/resize.js') }}"></script>
+    <script>
+    const BASE_IMAGE_PATH = "/assets/images/";
+    </script>
+    <script src="{{ url_for('static', filename='js/sidebar-image.js') }}"></script>
 
 </body>
 

@@ -1,41 +1,32 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, send_from_directory
 import requests
-from flask import send_from_directory
 import os
-
-ASSETS_FOLDER = os.path.join(os.getcwd(), "assets", "images")
-
-
 
 
 API_URL = "http://127.0.0.1:8000"
-
 dashboard_bp = Blueprint("dashboard_bp", __name__, template_folder="templates")
 
-#caminho seguro para os assets, como imagens
-@dashboard_bp.route('/assets/<path:filename>')
-def assets(filename):
+# Caminho absoluto correto para a pasta de imagens
+ASSETS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "images")
+
+
+# ✅ Servir arquivos da pasta assets/images/
+@dashboard_bp.route("/assets/images/<path:filename>")
+def serve_image(filename):
     return send_from_directory(ASSETS_FOLDER, filename)
 
 @dashboard_bp.route("/dashboard/<int:user_id>")
 def dashboard(user_id):
-    # Puxa pedidos
     pedidos = requests.get(f"{API_URL}/pedidos").json()
-
-    # Puxa chefias do usuário
     chefias = requests.get(f"{API_URL}/chefes/{user_id}").json()
-
-    # Lista IDs em que ele é chefia direta
     ids_chefia = [c["id_confere"] for c in chefias]
 
-    # Informações do usuário (painel esquerdo)
-    funcionario = None
-    if len(chefias) > 0:
-        funcionario = {
-            "nome": chefias[0]["funcionario_nome"],
-            "cargo": "Chefia direta",
-            "nivel": "Nível 1"
-        }
+    funcionario = requests.get(f"{API_URL}/dadosFuncionarios/{user_id}").json()
+    funcionario = {
+        "nome": funcionario["nome_funcionario"],
+        "cargo": funcionario["cargo_funcionario"],
+        "nivel": funcionario["nivel_funcionario"]
+    }
 
     return render_template(
         "dashboard.html",
@@ -44,9 +35,9 @@ def dashboard(user_id):
         ids_chefia=ids_chefia,
         user_id=user_id,
         itens=[],
-        pedido_selecionado=None
+        pedido_selecionado=None,
+        API_URL=API_URL  # 👈 adiciona isso
     )
-
 
 @dashboard_bp.get("/dashboard/<int:user_id>/pedido/<int:id_pedido>")
 def ver_itens(user_id, id_pedido):
@@ -55,20 +46,20 @@ def ver_itens(user_id, id_pedido):
     chefias = requests.get(f"{API_URL}/chefes/{user_id}").json()
     ids_chefia = [c["id_confere"] for c in chefias]
 
-    funcionario = None
-    if len(chefias) > 0:
-        funcionario = {
-            "nome": chefias[0]["funcionario_nome"],
-            "cargo": "Chefia direta",
-            "nivel": "Nível 1"
-        }
+    funcionario = requests.get(f"{API_URL}/dadosFuncionarios/{user_id}").json()
+    funcionario = {
+        "nome": funcionario["nome_funcionario"],
+        "cargo": funcionario["cargo_funcionario"],
+        "nivel": funcionario["nivel_funcionario"]
+    }
 
     return render_template(
         "dashboard.html",
         pedidos=pedidos,
-        itens=itens,
         funcionario=funcionario,
-        user_id=user_id,
         ids_chefia=ids_chefia,
-        pedido_selecionado=id_pedido
+        user_id=user_id,
+        itens=itens,
+        pedido_selecionado=None,
+        API_URL=API_URL  # 👈 adiciona isso
     )
