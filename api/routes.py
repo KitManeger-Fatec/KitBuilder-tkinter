@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException,Request
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import SessionLocal
 from fastapi.staticfiles import StaticFiles
 from app.models.funcionarios import Funcionario
 from app.models.dados_pedido import DadosPedido
+from app.models.pedido_aprova import PedidoAprova
 from app.models.pedido import Pedido    
 from app.models.chefia_direta import ChefiaDireta
 from pydantic import BaseModel
@@ -12,6 +13,11 @@ from api.schemas.loginRequest import LoginRequest
 from passlib.context import CryptContext
 from api.utils.security import verificar_senha
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+from app.utils.logger_config import get_logger
+
+logger = get_logger("JS_LOG")  # <-- crie o logger aqui
+
 
 
 
@@ -107,30 +113,45 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         # "token": gerar_jwt(user.id_funcionario)  # opcional
     }
 
-@api.get("/produto/{codigo}/imagem")
-def get_produto_imagem(codigo: str, db: Session = Depends(get_db)):
-    partes = codigo.split(".")
-    if len(partes) != 4:
-        raise HTTPException(400, "Código inválido")
-    subcat_id = int(partes[2])
+@api.get("/api/pedidos/para_aprovar/{id_user}")
+def pedidos_para_aprovar(id_user):
+    db: Session = next(get_db())
 
-    sql_sub = text("SELECT db_subcategoria FROM subcategoria WHERE idsubcategoria = :id_sub")
-    result = db.execute(sql_sub, {"id_sub": subcat_id}).fetchone()
-    if not result:
-        raise HTTPException(404, "Subcategoria não encontrada")
+    # 1️⃣ Buscar pedidos que este usuário precisa aprovar
+    pedidos = (
+        db.query(PedidoAprova, Funcionario.nivel_funcionario)
+        .join(Funcionario, PedidoAprova.id_chefia_aprova == Funcionario.idfuncionarios)
+        .filter(PedidoAprova.id_chefia_aprova == id_user)
+        .filter(PedidoAprova.pedido_aprovado != 1)
+        .all()
+    )
 
-    nome_tabela = result[0]
-    sql_item = text(f"SELECT imagem FROM {nome_tabela} WHERE codigo_produto = :codigo")
-    item = db.execute(sql_item, {"codigo": codigo}).fetchone()
-    if not item:
-        raise HTTPException(404, "Item não encontrado")
+    pedidos_liberados = []
 
-    imagem_campo = item[0]  # ex: "images/botao_verde.jpg" ou "botao_verde.jpg"
+    for pedido, nivel_user in pedidos:
 
-    # 3️⃣ normaliza o caminho (sem app/)
-    if imagem_campo.startswith("images/"):
-        imagem_url = f"/assets/{imagem_campo}"
-    else:
-        imagem_url = f"/assets/images/{imagem_campo}"
+        # 2️⃣ Buscar todos os chefes pendentes do mesmo pedido (com nível)
+        pendentes = (
+            db.query(PedidoAprova, Funcionario.nivel_funcionario)
+            .join(Funcionario, PedidoAprova.id_chefia_aprova == Funcionario.idfuncionarios)
+            .filter(PedidoAprova.pedido_idpedido == pedido.pedido_idpedido)
+            .filter(PedidoAprova.pedido_aprovado != 1)
+            .all()
+        )
 
-    return {"codigo": codigo, "tabela": nome_tabela, "imagem": imagem_url}
+        # 3️⃣ Pegar níveis dos outros chefes pendentes
+        niveis_outros = [
+            nivel
+            for pa, nivel in pendentes
+            if pa.id_chefia_aprova != id_user
+        ]
+
+        # 4️⃣ Pode aprovar se:
+        # - não há chefes mais baixos pendentes
+        # - ou ele É o menor nível pendente
+        if not niveis_outros or nivel_user <= min(niveis_outros):
+            pedidos_liberados.append({
+                "id_pedido": pedido.pedido_idpedido  # ✅ AJUSTADO AQUI
+            })
+
+    return pedidos_liberados

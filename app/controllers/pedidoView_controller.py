@@ -4,6 +4,8 @@ from app.database import SessionLocal
 from app.models.funcionarios import Funcionario
 from app.models.dados_pedido import DadosPedido
 from app.models.pedido import Pedido    
+from app.models.chefia_direta import ChefiaDireta
+from app.models.pedido_aprova import PedidoAprova
 from app.utils.session_manager import SessionManager
 logger = logging.getLogger(__name__)
 
@@ -142,6 +144,7 @@ class PedidoViewController:
                 session.add(pedido)
 
             session.commit()
+            cls.salvar_fluxo_aprovacao(session, dados_pedido.id_pedido, cls.usuario_logado["id"])
             logger.info(f"Pedido finalizado com sucesso. {len(cls.itens)} itens salvos.")
 
             # Limpa estado local e global
@@ -159,7 +162,46 @@ class PedidoViewController:
         finally:
             session.close()
 
+    # ================================
+    # GERAR A LISTA DE APROVAÇÃO
+    # ================================
+    @classmethod
+    def salvar_fluxo_aprovacao(cls, session, id_pedido, usuario_logado):
 
+        # 1. Buscar chefias do usuário
+        chefias = (
+            session.query(ChefiaDireta)
+            .filter(ChefiaDireta.id_funcionario == usuario_logado)
+            .all()
+        )
+
+        if not chefias:
+            logger.warning("Usuário não possui chefias cadastradas.")
+            return
+
+        # 2. Montar lista (obj_chefiadireta, nivel_do_chefe)
+        chefias_com_nivel = [
+            (ch, ch.chefe.nivel_funcionario)
+            for ch in chefias
+        ]
+
+        # 3. Ordenar por nível do chefe
+        chefias_ordenadas = sorted(
+            chefias_com_nivel,
+            key=lambda x: x[1]
+        )
+
+        # 4. Criar registros na tabela pedido_aprova
+        for ch, nivel in chefias_ordenadas:
+            registro = PedidoAprova(
+                pedido_idpedido=id_pedido,
+                id_chefia_aprova=ch.id_chefia,
+                pedido_aprovado = False
+            )
+            session.add(registro)
+
+        session.commit()
+        logger.info(f"Fluxo de aprovação criado para pedido {id_pedido}.")
 
 # Estado global opcional
 class AppState:
