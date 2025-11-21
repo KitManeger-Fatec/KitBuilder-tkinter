@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     resizer.addEventListener("mousedown", (e) => {
-      e.preventDefault();
+      e.stopPropagation();
       startX = e.pageX;
       startWidth = th.offsetWidth;
 

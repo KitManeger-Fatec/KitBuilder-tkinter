@@ -99,7 +99,7 @@ def ver_itens(user_id, id_pedido):
     "nome_chefia": "0",
     "nivel_chefia": 0,
     "aprovado": 0
-        }].json()
+        }]
 
     ids_chefia = [c.get("id_confere") for c in chefias]
     logger.debug(f"[DEBUG] IDs de chefia extraídos: {ids_chefia}")

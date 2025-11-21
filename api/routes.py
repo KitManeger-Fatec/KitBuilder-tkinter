@@ -155,3 +155,61 @@ def pedidos_para_aprovar(id_user):
             })
 
     return pedidos_liberados
+
+
+@api.get("/produto/{codigo}/imagem")
+def get_produto_imagem(codigo: str, db: Session = Depends(get_db)):
+    partes = codigo.split(".")
+    if len(partes) != 4:
+        raise HTTPException(400, "Código inválido")
+    subcat_id = int(partes[2])
+
+    sql_sub = text("SELECT db_subcategoria FROM subcategoria WHERE idsubcategoria = :id_sub")
+    result = db.execute(sql_sub, {"id_sub": subcat_id}).fetchone()
+    if not result:
+        raise HTTPException(404, "Subcategoria não encontrada")
+
+    nome_tabela = result[0]
+    sql_item = text(f"SELECT imagem FROM {nome_tabela} WHERE codigo_produto = :codigo")
+    item = db.execute(sql_item, {"codigo": codigo}).fetchone()
+    if not item:
+        raise HTTPException(404, "Item não encontrado")
+
+    imagem_campo = item[0]  # ex: "images/botao_verde.jpg" ou "botao_verde.jpg"
+
+    # 3️⃣ normaliza o caminho (sem app/)
+    if imagem_campo.startswith("images/"):
+        imagem_url = f"/assets/{imagem_campo}"
+    else:
+        imagem_url = f"/assets/images/{imagem_campo}"
+
+    return {"codigo": codigo, "tabela": nome_tabela, "imagem": imagem_url}
+
+@api.get("/pedido/{id_pedido}/chefes")
+def listar_chefes_pedido(id_pedido: int, db: Session = Depends(get_db)):
+
+    registros = (
+        db.query(
+            PedidoAprova,
+            Funcionario
+        )
+        .join(ChefiaDireta, PedidoAprova.id_chefia_aprova == ChefiaDireta.id_chefia)
+        .join(Funcionario, Funcionario.idfuncionarios == ChefiaDireta.id_chefia)
+        .filter(PedidoAprova.pedido_idpedido == id_pedido)
+        .all()
+    )
+
+    if not registros:
+        raise HTTPException(status_code=404, detail="Nenhum chefe encontrado para este pedido.")
+
+    resultado = []
+    for pa, chefe in registros:
+        resultado.append({
+            "id_pedido": id_pedido,
+            "id_chefia": chefe.idfuncionarios,
+            "nome_chefia": chefe.nome_funcionario,
+            "nivel_chefia": chefe.nivel_funcionario,
+            "aprovado": pa.pedido_aprovado,
+        })
+
+    return resultado
