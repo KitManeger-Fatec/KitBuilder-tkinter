@@ -20,6 +20,7 @@ class Pedido(Base):
     def to_dict(self):
         return {
             "aceito": self.aceito,
+            "linha_pedido": self.linha_pedido,
             "quantidade": self.quantidade,
             "medida": self.medida,
             "codigo": self.codigo,

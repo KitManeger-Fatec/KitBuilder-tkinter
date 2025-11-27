@@ -17,6 +17,8 @@ import threading
 import uvicorn
 from api.routes import api 
 from web_app.web import web  # Importa a aplicação Flask
+from multiprocessing import Process
+import threading
 
 Base.metadata.create_all(bind=engine)
 
@@ -110,16 +112,26 @@ class App:
 # -----------------------------
 # INÍCIO DO SCRIPT DA API 
 # -----------------------------
-
 def start_api():
     logging.basicConfig(level=logging.DEBUG)
-    uvicorn.run(api, host="127.0.0.1", port=8000, reload=False, log_level="info")
+    uvicorn.run(
+        api,
+        host="127.0.0.1",
+        port=8000,
+        reload=False,         # <<< DESLIGADO — necessário no Windows
+        log_level="info"
+    )
 
 # -----------------------------
 # INÍCIO DO SCRIPT DO SITE 
 # -----------------------------
 def start_flask():
-    web.run(host="127.0.0.1", port=5001, debug=False, use_reloader=False)
+    web.run(
+        host="127.0.0.1",
+        port=5001,
+        debug=False,          # <<< DESLIGADO — necessário no Windows
+        use_reloader=False    # <<< DESLIGADO — fonte do erro de pickle
+    )
 
 if __name__ == "__main__":
     if SETUP_LOGGING:
@@ -137,4 +149,3 @@ if __name__ == "__main__":
     # INICIA TKINTER (principal)
     app = App()
     app.run()
-''

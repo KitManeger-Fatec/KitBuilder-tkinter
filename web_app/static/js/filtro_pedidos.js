@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", async function () {
 
     let pedidos = window.APP_DATA.pedidos || []; 
+    const idUser = window.APP_DATA.user_id;
     const btnTodos = document.getElementById("btn-todos");
     const btnAprovar = document.getElementById("btn-aprovar");
 
@@ -9,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     // 1️⃣ CARREGA IDS DA API
     async function carregarIdsAprovar() {
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/pedidos/para_aprovar/1");
+            const response = await fetch(`http://127.0.0.1:8000/api/pedidos/para_aprovar/${idUser}`);
             if (!response.ok) throw new Error("Erro ao consultar API");
 
             const data = await response.json();

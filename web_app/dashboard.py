@@ -75,6 +75,28 @@ def ver_itens(user_id, id_pedido):
 
     logger.debug(f"\n===== ABRINDO PEDIDO {id_pedido} (user_id={user_id}) =====")
 
+    resp_ids = requests.get(f"{API_URL}/api/pedidos/para_aprovar/{user_id}").json()
+
+    # Se deu erro na API, força lista vazia
+    if not isinstance(resp_ids, list):
+        logger.warning(f"Resposta inesperada da API /para_aprovar: {resp_ids}")
+        resp_ids = []
+
+    print("==== DEBUG resp_ids ====")
+    print(resp_ids)
+    print("TYPE:", type(resp_ids))
+
+    # extrai só os ids
+    ids_para_aprovar = [p["id_pedido"] for p in resp_ids]
+
+    # verifica se o pedido atual pode ser aprovado pelo usuário
+    usuario_pode_aprovar = id_pedido in ids_para_aprovar
+
+    if usuario_pode_aprovar:
+        logger.debug(f"[API] Usuário {user_id} pode ver o campo ACEITO do pedido {id_pedido}")
+    else:
+        logger.debug(f"[API] Usuário {user_id} NÃO pode ver o campo ACEITO do pedido {id_pedido}")
+
     # Pedidos
     logger.debug(f"[API] GET {API_URL}/pedidos")
     pedidos = requests.get(f"{API_URL}/pedidos").json()
@@ -104,6 +126,7 @@ def ver_itens(user_id, id_pedido):
     ids_chefia = [c.get("id_confere") for c in chefias]
     logger.debug(f"[DEBUG] IDs de chefia extraídos: {ids_chefia}")
 
+
     # Funcionário
     logger.debug(f"[API] GET {API_URL}/dadosFuncionarios/{user_id}")
     func_api = requests.get(f"{API_URL}/dadosFuncionarios/{user_id}").json()
@@ -124,5 +147,6 @@ def ver_itens(user_id, id_pedido):
         user_id=user_id,
         itens=itens,
         pedido_selecionado=id_pedido,
-        API_URL=API_URL
+        API_URL=API_URL,
+        usuario_pode_aprovar=usuario_pode_aprovar
     )

@@ -22,7 +22,14 @@ function carregarChefias() {
         const div = document.createElement("div");
         div.classList.add("chefe-item");
 
-        const status = c.aprovado === 1 ? "Aprovado" : "Pendente";
+        const statusMap = {
+            0: "Pendente",
+            1: "Aprovado",
+            2: "Ressalvas",
+            3: "Reprovado"
+        };
+
+        const status = statusMap[c.aprovado] ?? "Status desconhecido";
 
         div.innerHTML = `
             <div class="chefe-nome">${c.nome_chefia}</div>

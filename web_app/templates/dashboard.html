@@ -24,9 +24,9 @@
         </div>
 
         <!-- PARTE SUPERIOR -->
-        <div class="sidebar-top">
+        <div class="sidebar-top" id ="funcionario-nome">
             <div class="sidebar-info">
-                <h2>{{ funcionario.nome }}</h2>
+                <h4>{{ funcionario.nome }}</h4>
 
                 <div class="info-block">
                     <span class="label">Cargo:</span>
@@ -82,6 +82,7 @@
 
         <!-- LISTA DE ITENS DO PEDIDO -->
         <div class="itens-list">
+        <div class="titulo-itens">
             <h3>
                 Itens do Pedido 
                 {% if pedido_selecionado %}
@@ -91,6 +92,13 @@
                 {% endif %}
             </h3>
 
+            {% if usuario_pode_aprovar %}
+            <button class="btn-finalizar" onclick="finalizarAprovacao()">
+                Finalizar Aprovação
+            </button>
+            {% endif %}
+        </div>
+
             {% if itens|length == 0 %}
                 <p class="nenhum-item">Nenhum item encontrado.</p>
 
@@ -98,6 +106,11 @@
             <table class="tabela-itens resizable">
                 <thead>
                     <tr>
+
+            {% if usuario_pode_aprovar %}
+                <th>Aceito</th>
+            {% endif %}
+
                         <th>Qtd</th>
                         <th>Medida</th>
                         <th>Código</th>
@@ -110,6 +123,19 @@
                 <tbody>
                     {% for item in itens %}
                     <tr data-foto="{{ item.foto }}">
+
+            {% if usuario_pode_aprovar %}
+            <td>
+                <label class="switch">
+                    <input type="checkbox"
+                        {% if item.aceito == 1 %}checked{% endif %}
+                        onchange="alterarAceite({{ item.linha_pedido }}, this.checked ? 1 : 0)">
+                    <span class="slider"></span>
+                </label>
+            </td>
+            {% endif %}
+                </td>
+
                         <td>{{ item.quantidade }}</td>
                         <td>{{ item.medida }}</td>
                         <td>{{ item.codigo }}</td>
@@ -140,13 +166,15 @@
         user_id: {{ user_id }},
         itens: {{ itens | tojson }},
         pedido_selecionado: {{ pedido_selecionado }},
-        API_URL: "{{ API_URL }}"
+        API_URL: "{{ API_URL }}",
+        usuario_pode_aprovar: {{ 'true' if usuario_pode_aprovar else 'false' }} 
     };
 </script>
     <script src="{{ url_for('static', filename='js/logger.js') }}"></script>
     <script src="{{ url_for('static', filename='js/sidebar-image.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chefias.js') }}"></script>
     <script src="{{ url_for('static', filename='js/filtro_pedidos.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/aceite.js') }}"></script>
 
 
 

@@ -15,6 +15,7 @@ from api.utils.security import verificar_senha
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from app.utils.logger_config import get_logger
+from datetime import datetime
 
 logger = get_logger("JS_LOG")  # <-- crie o logger aqui
 
@@ -46,6 +47,10 @@ def get_db():
         yield db
     finally:
         db.close()
+
+class LogEntrada(BaseModel):
+    mensagem: str
+    nivel: str = "info"
 
 @api.get("/")
 def home():
@@ -213,3 +218,73 @@ def listar_chefes_pedido(id_pedido: int, db: Session = Depends(get_db)):
         })
 
     return resultado
+
+@api.post("/pedido_item/aceite/{linha_pedido}")
+def atualizar_aceite(linha_pedido: int, data: dict):
+    novo_valor = data.get("aceito")
+
+    if novo_valor not in (0, 1):
+        raise HTTPException(status_code=400, detail="valor inválido para aceito")
+
+    db = SessionLocal()
+
+    item = db.query(Pedido).filter(Pedido.linha_pedido == linha_pedido).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+
+    item.aceito = novo_valor
+    db.commit()
+
+    return {"status": "ok", "linha_pedido": linha_pedido, "aceito": novo_valor}
+
+@api.post("/pedidos/gerar_log_removidos")
+async def gerar_log_removidos(payload: dict):
+    pedido_id = payload["pedido_id"]
+    removidos = payload["removidos"]
+    user = payload["user"]
+
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    nome_arquivo = f"logs/removed_pedido_{pedido_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+
+    with open(nome_arquivo, "w", encoding="utf-8") as f:
+        f.write(f"Pedido: {pedido_id}\n")
+        f.write(f"Usuário: {user}\n")
+        f.write(f"Data: {agora}\n")
+        f.write("Itens removidos:\n\n")
+
+        for item in removidos:
+            f.write(
+                f"- Código: {item['codigo']} | Produto: {item['produto']} "
+                f"| Fabricante: {item['fabricante']} | Qtd: {item['quantidade']}\n"
+            )
+
+    return {"status": "ok", "arquivo": nome_arquivo}
+
+@api.post("/pedidos/aprovar/{pedido_id}")
+async def aprovar_pedido(pedido_id: int):
+    # marque no banco como aprovado
+    # exemplo:
+    # db.execute(update(Pedido).where(Pedido.id == pedido_id).values(aprovado=1))
+    # db.commit()
+
+    return {"status": "aprovado"}
+
+@api.post("/log")
+async def registrar_log(entrada: LogEntrada):
+    """
+    Recebe logs do frontend e registra no servidor.
+    """
+
+    nivel = entrada.nivel.lower()
+
+    if nivel == "debug":
+        logger.debug(entrada.mensagem)
+    elif nivel == "warning":
+        logger.warning(entrada.mensagem)
+    elif nivel == "error":
+        logger.error(entrada.mensagem)
+    else:
+        logger.info(entrada.mensagem)
+
+    return {"status": "ok", "msg": "Log recebido"}
