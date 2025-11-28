@@ -288,3 +288,24 @@ async def registrar_log(entrada: LogEntrada):
         logger.info(entrada.mensagem)
 
     return {"status": "ok", "msg": "Log recebido"}
+
+
+@api.post("/AprovaPedido")
+def aprova_pedido( dados: dict, db: Session = Depends(get_db)):
+    id_chefia = dados.get("id_chefia")
+    id_pedido = dados.get("id_pedido")
+    aprovado = dados.get("aprovado")
+
+
+    pedido_aprova = db.query(PedidoAprova).filter(
+        PedidoAprova.pedido_idpedido == id_pedido,
+        PedidoAprova.id_chefia_aprova == id_chefia
+    ).first()
+
+    if not pedido_aprova:
+        raise HTTPException(status_code=404, detail="Registro de aprovação não encontrado")
+
+    pedido_aprova.pedido_aprovado = aprovado
+    db.commit()
+
+    return {"status": "ok", "id_pedido": id_pedido, "id_chefia": id_chefia, "aprovado": aprovado}

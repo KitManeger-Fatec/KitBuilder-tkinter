@@ -26,6 +26,7 @@ async function alterarAceite(linhaPedido, novoValor) {
 async function finalizarAprovacao() {
     const itens = window.APP_DATA.itens;
     const user = window.APP_DATA.funcionario.nome;
+    const userId = window.APP_DATA.user_id;
     const pedido_id = window.APP_DATA.pedido_selecionado;
 
     const aprovados = itens.filter(i => i.aceito === 1);
@@ -36,11 +37,19 @@ async function finalizarAprovacao() {
         enviarLog(`Tipo: ${typeof i.aceito} | Valor: ${i.aceito}`, "info");
     });
 
+    enviarLog(`user: ${user} | pedido_id: ${pedido_id} | userId: ${userId}`, "info");
+
+
     // Caso 1: nenhum removido → todos aprovados
     if (removidos.length === 0) {
         try {
-            const r = await fetch(`${window.APP_DATA.API_URL}/pedidos/aprovar/${pedido_id}`, {
-                method: 'POST'
+            const r = await fetch(`${window.APP_DATA.API_URL}/AprovaPedido`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    "id_pedido": pedido_id, 
+                    "id_chefia": userId,
+                    "aprovado": 1 })
             });
 
             if (!r.ok) throw new Error("Erro ao aprovar");
@@ -58,12 +67,18 @@ async function finalizarAprovacao() {
     // Caso 2: todos removidos → reprovado
     if (aprovados.length === 0 && removidos.length > 0) {
         // Aqui você define: pedido_reprovado = 3
-        await fetch(`${window.APP_DATA.API_URL}/pedidos/reprovar/${pedido_id}`, {
-            method: "POST"
+        await fetch(`${window.APP_DATA.API_URL}/AprovaPedido`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                "id_pedido": pedido_id, 
+                "id_chefia": userId,
+                "aprovado": 3 })
         });
 
         enviarLog(`Pedido ${pedido_id} reprovado — todos itens removidos`);
         alert("Pedido reprovado — todos os itens foram removidos.");
+
         location.reload();
         return;
     }
@@ -74,10 +89,13 @@ async function finalizarAprovacao() {
         const payload = { pedido_id, removidos, user };
 
         try {
-            const r = await fetch(`${window.APP_DATA.API_URL}/pedidos/ressalva/${pedido_id}`, {
+            const r = await fetch(`${window.APP_DATA.API_URL}/AprovaPedido`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ 
+                    "id_pedido": pedido_id, 
+                    "id_chefia": userId,
+                    "aprovado": 2 })
             });
 
             if (!r.ok) throw new Error("Erro ao gerar ressalva");
