@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from app.utils.logger_config import get_logger
 from datetime import datetime
+import os
 
 logger = get_logger("JS_LOG")  # <-- crie o logger aqui
 
@@ -238,37 +239,56 @@ def atualizar_aceite(linha_pedido: int, data: dict):
 
     return {"status": "ok", "linha_pedido": linha_pedido, "aceito": novo_valor}
 
-@api.post("/pedidos/gerar_log_removidos")
-async def gerar_log_removidos(payload: dict):
+
+@api.post("/pedidos/gerar_log")
+async def gerar_log_removidos(payload: dict, db: Session = Depends(get_db)):
+
     pedido_id = payload["pedido_id"]
     removidos = payload["removidos"]
-    user = payload["user"]
+    chefia = payload["user"]
+    mensagem  = payload.get("mensagem", "")
+
+    dados = get_dados_pedido(pedido_id, db)
+
+    # Diretório onde os logs ficam
+    pasta_logs = "logs"
+    os.makedirs(pasta_logs, exist_ok=True)
+
+    # Nome baseado no dia
+    data_hoje = datetime.now().strftime("%d-%m-%Y")
+
+    # Arquivo único por dia
+    nome_arquivo = f"{pasta_logs}/log_{data_hoje}.txt"
+
+    # Verifica se o arquivo existe → append
+    modo = "a" if os.path.exists(nome_arquivo) else "w"
 
     agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    nome_arquivo = f"logs/removed_pedido_{pedido_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
 
-    with open(nome_arquivo, "w", encoding="utf-8") as f:
-        f.write(f"Pedido: {pedido_id}\n")
-        f.write(f"Usuário: {user}\n")
+    with open(nome_arquivo, modo, encoding="utf-8") as f:
+        f.write("=====================================================\n")
         f.write(f"Data: {agora}\n")
-        f.write("Itens removidos:\n\n")
+        f.write(f"Funcionário: {dados['funcionario']}\n")
+        f.write(f"Chefia: {chefia}\n")
+        f.write(f"Projeto: {dados['nome_projeto']}\n")
+        f.write(f"Lista: {dados['nome_lista']}\n")
+        f.write(f"ID do Pedido: {pedido_id}\n")
+        f.write(f"Mensagem: {mensagem}\n")
 
-        for item in removidos:
-            f.write(
-                f"- Código: {item['codigo']} | Produto: {item['produto']} "
-                f"| Fabricante: {item['fabricante']} | Qtd: {item['quantidade']}\n"
-            )
+
+        if len(removidos) != 0:
+            f.write("Itens removidos:\n")
+            for item in removidos:
+                f.write(
+                    f"- Código: {item['codigo']} | Produto: {item['produto']} "
+                    f"| Fabricante: {item['fabricante']} | Qtd: {item['quantidade']}\n"
+                )
+
+        f.write("\n")  # Linha extra para organizar
 
     return {"status": "ok", "arquivo": nome_arquivo}
 
-@api.post("/pedidos/aprovar/{pedido_id}")
-async def aprovar_pedido(pedido_id: int):
-    # marque no banco como aprovado
-    # exemplo:
-    # db.execute(update(Pedido).where(Pedido.id == pedido_id).values(aprovado=1))
-    # db.commit()
 
-    return {"status": "aprovado"}
 
 @api.post("/log")
 async def registrar_log(entrada: LogEntrada):
@@ -309,3 +329,11 @@ def aprova_pedido( dados: dict, db: Session = Depends(get_db)):
     db.commit()
 
     return {"status": "ok", "id_pedido": id_pedido, "id_chefia": id_chefia, "aprovado": aprovado}
+
+@api.get("/dados_pedido/{id_pedido}")
+def get_dados_pedido(id_pedido: int, db: Session = Depends(get_db)):
+
+    dados_pedido = db.query(DadosPedido).filter(DadosPedido.id_pedido == id_pedido).first()
+    if not dados_pedido:
+        raise HTTPException(status_code=404, detail="Dados do pedido não encontrados")
+    return dados_pedido.to_dict()   

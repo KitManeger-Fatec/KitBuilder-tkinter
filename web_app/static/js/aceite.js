@@ -31,6 +31,11 @@ async function finalizarAprovacao() {
 
     const aprovados = itens.filter(i => i.aceito === 1);
     const removidos = itens.filter(i => i.aceito === 0);
+
+    removidos.forEach(i => {
+        enviarLog(`Item removido: linha_pedido=${i.linha_pedido}`, "info");
+    });
+
     enviarLog("ITENS: " + JSON.stringify(itens), "info");
 
     itens.forEach(i => {
@@ -55,6 +60,7 @@ async function finalizarAprovacao() {
             if (!r.ok) throw new Error("Erro ao aprovar");
 
             alert("Pedido aprovado com sucesso!");
+            await enviarLogPedido("Pedido aprovado com sucesso!");
             location.reload();
 
         } catch (err) {
@@ -75,7 +81,7 @@ async function finalizarAprovacao() {
                 "id_chefia": userId,
                 "aprovado": 3 })
         });
-
+        await enviarLogPedido("Pedido reprovado — todos os itens foram removidos.");
         enviarLog(`Pedido ${pedido_id} reprovado — todos itens removidos`);
         alert("Pedido reprovado — todos os itens foram removidos.");
 
@@ -101,7 +107,7 @@ async function finalizarAprovacao() {
             if (!r.ok) throw new Error("Erro ao gerar ressalva");
 
             enviarLog(`Pedido ${pedido_id} em ressalva — itens removidos: ${JSON.stringify(removidos)}`);
-
+            await enviarLogPedido("Pedido em ressalva — alguns itens foram removidos.");
             alert("Pedido em ressalva — alguns itens foram removidos.");
             location.reload();
 
@@ -110,5 +116,32 @@ async function finalizarAprovacao() {
             alert("Erro ao gerar ressalva.");
         }
         return;
+    }
+}
+
+
+async function enviarLogPedido(mensagem) {
+
+    const payload = {
+        pedido_id: window.APP_DATA.pedido_selecionado,
+        user: window.APP_DATA.funcionario.nome,
+        removidos: window.APP_DATA.itens.filter(i => i.aceito === 0),
+        mensagem
+    };
+    enviarLog("Enviando log para o servidor:" + JSON.stringify(payload), "info");
+
+    try {
+        const r = await fetch(`${window.APP_DATA.API_URL}/pedidos/gerar_log`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!r.ok) {
+            console.error("Erro ao enviar log para o servidor");
+        }
+
+    } catch (err) {
+        console.error("Falha ao enviar log:", err);
     }
 }
